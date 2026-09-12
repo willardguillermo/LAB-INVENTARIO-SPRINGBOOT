@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inventario Hospitalario</title>
+<style>
+  :root {
+    --bg: #f4f6f8;
+    --card: #ffffff;
+    --border: #dde2e7;
+    --text: #1f2933;
+    --muted: #6b7785;
+    --primary: #2563eb;
+    --primary-dark: #1d4ed8;
+    --danger: #dc2626;
+    --success: #16a34a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+  header {
+    background: #111827;
+    color: white;
+    padding: 18px 24px;
+  }
+  header h1 { margin: 0; font-size: 1.3rem; }
+  header p { margin: 4px 0 0; color: #9ca3af; font-size: 0.85rem; }
+
+  nav {
+    display: flex;
+    gap: 4px;
+    background: #1f2937;
+    padding: 0 20px;
+    overflow-x: auto;
+  }
+  nav button {
+    background: transparent;
+    border: none;
+    color: #cbd5e1;
+    padding: 12px 16px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    border-bottom: 3px solid transparent;
+    white-space: nowrap;
+  }
+  nav button.active {
+    color: white;
+    border-bottom-color: var(--primary);
+    font-weight: 600;
+  }
+
+  main {
+    max-width: 1100px;
+    margin: 24px auto;
+    padding: 0 16px;
+  }
+  .tab { display: none; }
+  .tab.active { display: block; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin-bottom: 20px;
+  }
+  .card h2 { margin-top: 0; font-size: 1.05rem; }
+
+  form.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 10px 14px;
+    align-items: end;
+  }
+  label {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  input, select {
+    width: 100%;
+    padding: 7px 9px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.9rem;
+  }
+  .checkbox-field {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding-bottom: 6px;
+  }
+  .checkbox-field input { width: auto; }
+
+  button.action {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    height: fit-content;
+  }
+  button.action:hover { background: var(--primary-dark); }
+  button.secondary {
+    background: #e5e7eb;
+    color: var(--text);
+  }
+  button.secondary:hover { background: #d1d5db; }
+  button.danger { background: var(--danger); color: white; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  th, td {
+    text-align: left;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  th { color: var(--muted); font-weight: 600; font-size: 0.75rem; text-transform: uppercase; }
+  tr:hover td { background: #f9fafb; }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 600;
+  }
+  .badge.on { background: #dcfce7; color: var(--success); }
+  .badge.off { background: #fee2e2; color: var(--danger); }
+
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .filters input, .filters select { width: auto; min-width: 140px; }
+
+  #toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #111827;
+    color: white;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.25s ease;
+    max-width: 360px;
+    z-index: 999;
+  }
+  #toast.show { opacity: 1; transform: translateY(0); }
+  #toast.error { background: var(--danger); }
+  #toast.success { background: var(--success); }
+
+  .actions-cell { display: flex; gap: 6px; }
+  .actions-cell button { font-size: 0.75rem; padding: 4px 8px; }
+  .empty-row td { text-align: center; color: var(--muted); padding: 18px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Inventario y Almacén Hospitalario</h1>
+  <p>Panel de prueba para las APIs REST (Productos · Categorías · Unidades de Medida · Proveedores)</p>
+</header>
+
+<nav>
+  <button class="tab-btn active" data-tab="productos">Productos</button>
+  <button class="tab-btn" data-tab="categorias">Categorías</button>
+  <button class="tab-btn" data-tab="unidades">Unidades de Medida</button>
+  <button class="tab-btn" data-tab="proveedores">Proveedores</button>
+</nav>
+
+<main>
+
+  <!-- ================= PRODUCTOS ================= -->
+  <section id="productos" class="tab active">
+    <div class="card">
+      <h2 id="producto-form-title">Registrar producto</h2>
+      <form class="grid" id="form-producto">
+        <input type="hidden" id="producto-id">
+        <div>
+          <label>Nombre *</label>
+          <input type="text" id="producto-nombre" required>
+        </div>
+        <div>
+          <label>Tipo de producto *</label>
+          <input type="text" id="producto-tipo" required>
+        </div>
+        <div>
+          <label>Descripción</label>
+          <input type="text" id="producto-descripcion">
+        </div>
+        <div>
+          <label>Marca</label>
+          <input type="text" id="producto-marca">
+        </div>
+        <div>
+          <label>Fabricante</label>
+          <input type="text" id="producto-fabricante">
+        </div>
+        <div>
+          <label>Código</label>
+          <input type="text" id="producto-codigo">
+        </div>
+        <div>
+          <label>Código de barras</label>
+          <input type="text" id="producto-codigoBarras">
+        </div>
+        <div>
+          <label>Categoría</label>
+          <select id="producto-categoria"><option value="">— Sin categoría —</option></select>
+        </div>
+        <div>
+          <label>Unidad de medida</label>
+          <select id="producto-unidad"><option value="">— Sin unidad —</option></select>
+        </div>
+        <div>
+          <label>Stock mínimo</label>
+          <input type="number" id="producto-stockMinimo" min="0">
+        </div>
+        <div>
+          <label>Stock máximo</label>
+          <input type="number" id="producto-stockMaximo" min="0">
+        </div>
+        <div>
+          <label>Punto de reposición</label>
+          <input type="number" id="producto-puntoReposicion" min="0">
+        </div>
+        <div class="checkbox-field">
+          <input type="checkbox" id="producto-manejaLote">
+          <label style="margin:0">Maneja lote</label>
+        </div>
+        <div class="checkbox-field">
+          <input type="checkbox" id="producto-manejaVencimiento">
+          <label style="margin:0">Maneja vencimiento</label>
+        </div>
+        <div class="checkbox-field">
+          <input type="checkbox" id="producto-activo" checked>
+          <label style="margin:0">Activo</label>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button type="submit" class="action" id="producto-submit-btn">Guardar</button>
+          <button type="button" class="action secondary" id="producto-cancel-btn" style="display:none">Cancelar</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>Listado de productos</h2>
+      <div class="filters">
+        <input type="text" id="filtro-nombre" placeholder="Buscar por nombre...">
+        <input type="text" id="filtro-tipo" placeholder="Filtrar por tipo...">
+        <select id="filtro-estado">
+          <option value="">Todos los estados</option>
+          <option value="true">Activos</option>
+          <option value="false">Inactivos</option>
+        </select>
+        <button class="action" id="btn-filtrar">Buscar</button>
+        <button class="action secondary" id="btn-limpiar-filtro">Limpiar</button>
+      </div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th><th>Nombre</th><th>Tipo</th><th>Categoría</th><th>Unidad</th>
+              <th>Stock (min/max/rep)</th><th>Lote</th><th>Venc.</th><th>Estado</th><th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="productos-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= CATEGORIAS ================= -->
+  <section id="categorias" class="tab">
+    <div class="card">
+      <h2 id="categoria-form-title">Registrar categoría</h2>
+      <form class="grid" id="form-categoria">
+        <input type="hidden" id="categoria-id">
+        <div>
+          <label>Nombre *</label>
+          <input type="text" id="categoria-nombre" required>
+        </div>
+        <div>
+          <label>Descripción</label>
+          <input type="text" id="categoria-descripcion">
+        </div>
+        <div class="checkbox-field">
+          <input type="checkbox" id="categoria-estado" checked>
+          <label style="margin:0">Activa</label>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button type="submit" class="action">Guardar</button>
+          <button type="button" class="action secondary" id="categoria-cancel-btn" style="display:none">Cancelar</button>
+        </div>
+      </form>
+    </div>
+    <div class="card">
+      <h2>Listado de categorías</h2>
+      <table>
+        <thead><tr><th>ID</th><th>Nombre</th><th>Descripción</th><th>Estado</th><th>Acciones</th></tr></thead>
+        <tbody id="categorias-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ================= UNIDADES ================= -->
+  <section id="unidades" class="tab">
+    <div class="card">
+      <h2>Registrar unidad de medida</h2>
+      <form class="grid" id="form-unidad">
+        <div>
+          <label>Nombre *</label>
+          <input type="text" id="unidad-nombre" required>
+        </div>
+        <div>
+          <label>Abreviatura *</label>
+          <input type="text" id="unidad-abreviatura" required>
+        </div>
+        <div>
+          <button type="submit" class="action">Guardar</button>
+        </div>
+      </form>
+      <p style="color:var(--muted); font-size:0.8rem; margin-bottom:0;">
+        Nota: la API de Unidades de Medida por ahora solo expone registrar y listar (no modificar).
+      </p>
+    </div>
+    <div class="card">
+      <h2>Listado de unidades de medida</h2>
+      <table>
+        <thead><tr><th>ID</th><th>Nombre</th><th>Abreviatura</th><th>Estado</th></tr></thead>
+        <tbody id="unidades-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ================= PROVEEDORES ================= -->
+  <section id="proveedores" class="tab">
+    <div class="card">
+      <h2 id="proveedor-form-title">Registrar proveedor</h2>
+      <form class="grid" id="form-proveedor">
+        <input type="hidden" id="proveedor-id">
+        <div>
+          <label>RUC *</label>
+          <input type="text" id="proveedor-ruc" required>
+        </div>
+        <div>
+          <label>Razón social *</label>
+          <input type="text" id="proveedor-razonSocial" required>
+        </div>
+        <div>
+          <label>Contacto</label>
+          <input type="text" id="proveedor-contacto">
+        </div>
+        <div>
+          <label>Teléfono</label>
+          <input type="text" id="proveedor-telefono">
+        </div>
+        <div>
+          <label>Email</label>
+          <input type="email" id="proveedor-email">
+        </div>
+        <div>
+          <label>Dirección</label>
+          <input type="text" id="proveedor-direccion">
+        </div>
+        <div>
+          <label>Estado</label>
+          <select id="proveedor-estado">
+            <option value="ACTIVO">ACTIVO</option>
+            <option value="INACTIVO">INACTIVO</option>
+          </select>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button type="submit" class="action">Guardar</button>
+          <button type="button" class="action secondary" id="proveedor-cancel-btn" style="display:none">Cancelar</button>
+        </div>
+      </form>
+    </div>
+    <div class="card">
+      <h2>Listado de proveedores</h2>
+      <table>
+        <thead><tr><th>ID</th><th>RUC</th><th>Razón social</th><th>Contacto</th><th>Teléfono</th><th>Estado</th><th>Acciones</th></tr></thead>
+        <tbody id="proveedores-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+</main>
+
+<div id="toast"></div>
+
+<script>
+const API = "/api";
+
+// ---------- helpers ----------
+function toast(msg, type) {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.className = "show" + (type ? " " + type : "");
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.className = ""; }, 3200);
+}
+
+async function apiFetch(path, options) {
+  const res = await fetch(API + path, options);
+  let body = null;
+  const text = await res.text();
+  try { body = text ? JSON.parse(text) : null; } catch (e) { body = text; }
+  if (!res.ok) {
+    const msg = (body && (body.message || body.error)) || `Error HTTP ${res.status}`;
+    throw new Error(msg);
+  }
+  return body;
+}
+
+function esc(v) {
+  if (v === null || v === undefined) return "";
+  return String(v).replace(/[&<>"']/g, c => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  }[c]));
+}
+
+// ---------- tabs ----------
+document.querySelectorAll(".tab-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById(btn.dataset.tab).classList.add("active");
+  });
+});
+
+// ======================================================
+// PRODUCTOS
+// ======================================================
+async function cargarSelectsProducto() {
+  const [categorias, unidades] = await Promise.all([
+    apiFetch("/categorias").catch(() => []),
+    apiFetch("/unidades-medida").catch(() => [])
+  ]);
+  const selCat = document.getElementById("producto-categoria");
+  const selUni = document.getElementById("producto-unidad");
+  selCat.innerHTML = '<option value="">— Sin categoría —</option>' +
+    categorias.map(c => `<option value="${c.id}">${esc(c.nombre)}</option>`).join("");
+  selUni.innerHTML = '<option value="">— Sin unidad —</option>' +
+    unidades.map(u => `<option value="${u.id}">${esc(u.nombre)} (${esc(u.abreviatura)})</option>`).join("");
+}
+
+function limpiarFormProducto() {
+  document.getElementById("form-producto").reset();
+  document.getElementById("producto-id").value = "";
+  document.getElementById("producto-activo").checked = true;
+  document.getElementById("producto-form-title").textContent = "Registrar producto";
+  document.getElementById("producto-submit-btn").textContent = "Guardar";
+  document.getElementById("producto-cancel-btn").style.display = "none";
+}
+
+function productoDesdeForm() {
+  const catId = document.getElementById("producto-categoria").value;
+  const uniId = document.getElementById("producto-unidad").value;
+  return {
+    nombre: document.getElementById("producto-nombre").value,
+    tipoProducto: document.getElementById("producto-tipo").value,
+    descripcion: document.getElementById("producto-descripcion").value || null,
+    marca: document.getElementById("producto-marca").value || null,
+    fabricante: document.getElementById("producto-fabricante").value || null,
+    codigo: document.getElementById("producto-codigo").value || null,
+    codigoBarras: document.getElementById("producto-codigoBarras").value || null,
+    stockMinimo: numOrNull("producto-stockMinimo"),
+    stockMaximo: numOrNull("producto-stockMaximo"),
+    puntoReposicion: numOrNull("producto-puntoReposicion"),
+    manejaLote: document.getElementById("producto-manejaLote").checked,
+    manejaVencimiento: document.getElementById("producto-manejaVencimiento").checked,
+    activo: document.getElementById("producto-activo").checked,
+    categoria: catId ? { id: Number(catId) } : null,
+    unidadMedida: uniId ? { id: Number(uniId) } : null
+  };
+}
+
+function numOrNull(id) {
+  const v = document.getElementById(id).value;
+  return v === "" ? null : Number(v);
+}
+
+document.getElementById("form-producto").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const id = document.getElementById("producto-id").value;
+  const payload = productoDesdeForm();
+  try {
+    if (id) {
+      await apiFetch(`/productos/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      toast("Producto actualizado", "success");
+    } else {
+      await apiFetch("/productos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      toast("Producto registrado", "success");
+    }
+    limpiarFormProducto();
+    cargarProductos();
+  } catch (err) {
+    toast(err.message, "error");
+  }
+});
+
+document.getElementById("producto-cancel-btn").addEventListener("click", limpiarFormProducto);
+
+function editarProducto(p) {
+  document.getElementById("producto-id").value = p.id;
+  document.getElementById("producto-nombre").value = p.nombre || "";
+  document.getElementById("producto-tipo").value = p.tipoProducto || "";
+  document.getElementById("producto-descripcion").value = p.descripcion || "";
+  document.getElementById("producto-marca").value = p.marca || "";
+  document.getElementById("producto-fabricante").value = p.fabricante || "";
+  document.getElementById("producto-codigo").value = p.codigo || "";
+  document.getElementById("producto-codigoBarras").value = p.codigoBarras || "";
+  document.getElementById("producto-categoria").value = p.categoria ? p.categoria.id : "";
+  document.getElementById("producto-unidad").value = p.unidadMedida ? p.unidadMedida.id : "";
+  document.getElementById("producto-stockMinimo").value = p.stockMinimo ?? "";
+  document.getElementById("producto-stockMaximo").value = p.stockMaximo ?? "";
+  document.getElementById("producto-puntoReposicion").value = p.puntoReposicion ?? "";
+  document.getElementById("producto-manejaLote").checked = !!p.manejaLote;
+  document.getElementById("producto-manejaVencimiento").checked = !!p.manejaVencimiento;
+  document.getElementById("producto-activo").checked = !!p.activo;
+  document.getElementById("producto-form-title").textContent = `Editando producto #${p.id}`;
+  document.getElementById("producto-submit-btn").textContent = "Actualizar";
+  document.getElementById("producto-cancel-btn").style.display = "inline-block";
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function renderProductos(lista) {
+  const tbody = document.getElementById("productos-tbody");
+  if (!lista.length) {
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="10">Sin productos registrados</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = lista.map(p => `
+    <tr>
+      <td>${p.id}</td>
+      <td>${esc(p.nombre)}</td>
+      <td>${esc(p.tipoProducto)}</td>
+      <td>${p.categoria ? esc(p.categoria.nombre) : "—"}</td>
+      <td>${p.unidadMedida ? esc(p.unidadMedida.abreviatura) : "—"}</td>
+      <td>${p.stockMinimo ?? "-"} / ${p.stockMaximo ?? "-"} / ${p.puntoReposicion ?? "-"}</td>
+      <td>${p.manejaLote ? "Sí" : "No"}</td>
+      <td>${p.manejaVencimiento ? "Sí" : "No"}</td>
+      <td><span class="badge ${p.activo ? "on" : "off"}">${p.activo ? "Activo" : "Inactivo"}</span></td>
+      <td class="actions-cell">
+        <button class="action secondary" onclick='editarProducto(${JSON.stringify(p).replace(/'/g, "&#39;")})'>Editar</button>
+      </td>
+    </tr>
+  `).join("");
+}
+
+async function cargarProductos() {
+  try {
+    const data = await apiFetch("/productos");
+    renderProductos(data);
+  } catch (err) {
+    toast(err.message, "error");
+  }
+}
+
+document.getElementById("btn-filtrar").addEventListener("click", async () => {
+  const nombre = document.getElementById("filtro-nombre").value.trim();
+  const tipo = document.getElementById("filtro-tipo").value.trim();
+  const estado = document.getElementById("filtro-estado").value;
+  try {
+    let data;
+    if (nombre && tipo) {
+      data = await apiFetch(`/productos/filtrar?nombre=${encodeURIComponent(nombre)}&tipoProducto=${encodeURIComponent(tipo)}`);
+    } else if (nombre) {
+      data = await apiFetch(`/productos/buscar?nombre=${encodeURIComponent(nombre)}`);
+    } else if (tipo) {
+      data = await apiFetch(`/productos/filtrar/tipo?tipoProducto=${encodeURIComponent(tipo)}`);
+    } else if (estado) {
+      data = await apiFetch(`/productos/filtrar/estado?activo=${estado}`);
+    } else {
+      data = await apiFetch("/productos");
+    }
+    renderProductos(data);
+  } catch (err) {
+    toast(err.message, "error");
+  }
+});
+
+document.getElementById("btn-limpiar-filtro").addEventListener("click", () => {
+  document.getElementById("filtro-nombre").value = "";
+  document.getElementById("filtro-tipo").value = "";
+  document.getElementById("filtro-estado").value = "";
+  cargarProductos();
+});
+
+// ======================================================
+// CATEGORIAS
+// ======================================================
+function limpiarFormCategoria() {
+  document.getElementById("form-categoria").reset();
+  document.getElementById("categoria-id").value = "";
+  document.getElementById("categoria-estado").checked = true;
+  document.getElementById("categoria-form-title").textContent = "Registrar categoría";
+  document.getElementById("categoria-cancel-btn").style.display = "none";
+}
+
+document.getElementById("form-categoria").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const id = document.getElementById("categoria-id").value;
+  const payload = {
+    nombre: document.getElementById("categoria-nombre").value,
+    descripcion: document.getElementById("categoria-descripcion").value || null,
+    estado: document.getElementById("categoria-estado").checked
+  };
+  try {
+    if (id) {
+      await apiFetch(`/categorias/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      toast("Categoría actualizada", "success");
+    } else {
+      await apiFetch("/categorias", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      toast("Categoría registrada", "success");
+    }
+    limpiarFormCategoria();
+    cargarCategorias();
+    cargarSelectsProducto();
+  } catch (err) {
+    toast(err.message, "error");
+  }
+});
+
+document.getElementById("categoria-cancel-btn").addEventListener("click", limpiarFormCategoria);
+
+function editarCategoria(c) {
+  document.getElementById("categoria-id").value = c.id;
+  document.getElementById("categoria-nombre").value = c.nombre || "";
+  document.getElementById("categoria-descripcion").value = c.descripcion || "";
+  document.getElementById("categoria-estado").checked = !!c.estado;
+  document.getElementById("categoria-form-title").textContent = `Editando categoría #${c.id}`;
+  document.getElementById("categoria-cancel-btn").style.display = "inline-block";
+}
+
+async function cargarCategorias() {
+  try {
+    const data = await apiFetch("/categorias");
+    const tbody = document.getElementById("categorias-tbody");
+    tbody.innerHTML = data.length ? data.map(c => `
+      <tr>
+        <td>${c.id}</td>
+        <td>${esc(c.nombre)}</td>
+        <td>${esc(c.descripcion)}</td>
+        <td><span class="badge ${c.estado ? "on" : "off"}">${c.estado ? "Activa" : "Inactiva"}</span></td>
+        <td><button class="action secondary" onclick='editarCategoria(${JSON.stringify(c)})'>Editar</button></td>
+      </tr>
+    `).join("") : `<tr class="empty-row"><td colspan="5">Sin categorías registradas</td></tr>`;
+  } catch (err) {
+    toast(err.message, "error");
+  }
+}
+
+// ======================================================
+// UNIDADES DE MEDIDA
+// ======================================================
+document.getElementById("form-unidad").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const payload = {
+    nombre: document.getElementById("unidad-nombre").value,
+    abreviatura: document.getElementById("unidad-abreviatura").value
+  };
+  try {
+    await apiFetch("/unidades-medida", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    toast("Unidad de medida registrada", "success");
+    document.getElementById("form-unidad").reset();
+    cargarUnidades();
+    cargarSelectsProducto();
+  } catch (err) {
+    toast(err.message, "error");
+  }
+});
+
+async function cargarUnidades() {
+  try {
+    const data = await apiFetch("/unidades-medida");
+    const tbody = document.getElementById("unidades-tbody");
+    tbody.innerHTML = data.length ? data.map(u => `
+      <tr>
+        <td>${u.id}</td>
+        <td>${esc(u.nombre)}</td>
+        <td>${esc(u.abreviatura)}</td>
+        <td><span class="badge ${u.estado ? "on" : "off"}">${u.estado ? "Activa" : "Inactiva"}</span></td>
+      </tr>
+    `).join("") : `<tr class="empty-row"><td colspan="4">Sin unidades registradas</td></tr>`;
+  } catch (err) {
+    toast(err.message, "error");
+  }
+}
+
+// ======================================================
+// PROVEEDORES
+// ======================================================
+function limpiarFormProveedor() {
+  document.getElementById("form-proveedor").reset();
+  document.getElementById("proveedor-id").value = "";
+  document.getElementById("proveedor-form-title").textContent = "Registrar proveedor";
+  document.getElementById("proveedor-cancel-btn").style.display = "none";
+}
+
+document.getElementById("form-proveedor").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const id = document.getElementById("proveedor-id").value;
+  const payload = {
+    ruc: document.getElementById("proveedor-ruc").value,
+    razonSocial: document.getElementById("proveedor-razonSocial").value,
+    contacto: document.getElementById("proveedor-contacto").value || null,
+    telefono: document.getElementById("proveedor-telefono").value || null,
+    email: document.getElementById("proveedor-email").value || null,
+    direccion: document.getElementById("proveedor-direccion").value || null,
+    estado: document.getElementById("proveedor-estado").value
+  };
+  try {
+    if (id) {
+      await apiFetch(`/proveedores/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      toast("Proveedor actualizado", "success");
+    } else {
+      await apiFetch("/proveedores", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      toast("Proveedor registrado", "success");
+    }
+    limpiarFormProveedor();
+    cargarProveedores();
+  } catch (err) {
+    toast(err.message, "error");
+  }
+});
+
+document.getElementById("proveedor-cancel-btn").addEventListener("click", limpiarFormProveedor);
+
+function editarProveedor(p) {
+  document.getElementById("proveedor-id").value = p.id;
+  document.getElementById("proveedor-ruc").value = p.ruc || "";
+  document.getElementById("proveedor-razonSocial").value = p.razonSocial || "";
+  document.getElementById("proveedor-contacto").value = p.contacto || "";
+  document.getElementById("proveedor-telefono").value = p.telefono || "";
+  document.getElementById("proveedor-email").value = p.email || "";
+  document.getElementById("proveedor-direccion").value = p.direccion || "";
+  document.getElementById("proveedor-estado").value = p.estado || "ACTIVO";
+  document.getElementById("proveedor-form-title").textContent = `Editando proveedor #${p.id}`;
+  document.getElementById("proveedor-cancel-btn").style.display = "inline-block";
+}
+
+async function cargarProveedores() {
+  try {
+    const data = await apiFetch("/proveedores");
+    const tbody = document.getElementById("proveedores-tbody");
+    tbody.innerHTML = data.length ? data.map(p => `
+      <tr>
+        <td>${p.id}</td>
+        <td>${esc(p.ruc)}</td>
+        <td>${esc(p.razonSocial)}</td>
+        <td>${esc(p.contacto)}</td>
+        <td>${esc(p.telefono)}</td>
+        <td><span class="badge ${p.estado === "ACTIVO" ? "on" : "off"}">${esc(p.estado)}</span></td>
+        <td><button class="action secondary" onclick='editarProveedor(${JSON.stringify(p)})'>Editar</button></td>
+      </tr>
+    `).join("") : `<tr class="empty-row"><td colspan="7">Sin proveedores registrados</td></tr>`;
+  } catch (err) {
+    toast(err.message, "error");
+  }
+}
+
+// ---------- init ----------
+(async function init() {
+  await cargarSelectsProducto();
+  cargarProductos();
+  cargarCategorias();
+  cargarUnidades();
+  cargarProveedores();
+})();
+</script>
+
+</body>
+</html>

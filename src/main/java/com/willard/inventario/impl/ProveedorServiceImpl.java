@@ -4,7 +4,9 @@ import com.willard.inventario.model.Proveedor;
 import com.willard.inventario.repository.ProveedorRepository;
 import com.willard.inventario.service.ProveedorService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -22,7 +24,7 @@ public class ProveedorServiceImpl implements ProveedorService {
     @Override
     public Proveedor modificar(Long id, Proveedor proveedor) {
         Proveedor existente = proveedorRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Proveedor no encontrado con id " + id));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Proveedor no encontrado con id " + id));
 
         existente.setRuc(proveedor.getRuc());
         existente.setRazonSocial(proveedor.getRazonSocial());
@@ -43,6 +45,6 @@ public class ProveedorServiceImpl implements ProveedorService {
     @Override
     public Proveedor buscarPorId(Long id) {
         return proveedorRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Proveedor no encontrado con id " + id));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Proveedor no encontrado con id " + id));
     }
 }

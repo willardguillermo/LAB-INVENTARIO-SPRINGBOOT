@@ -1,5 +1,7 @@
 package com.willard.inventario.entity;
 
+import com.willard.inventario.models.Categoria;
+import com.willard.inventario.models.UnidadMedida;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -64,4 +66,12 @@ public class ProductoEntity {
 
     @NotNull
     private Boolean activo = true;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "categoria_id")
+    private Categoria categoria;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "unidad_medida_id")
+    private UnidadMedida unidadMedida;
 }
