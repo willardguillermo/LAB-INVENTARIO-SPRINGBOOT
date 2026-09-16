@@ -1,10 +1,12 @@
 package com.willard.inventario.service;
 
 import com.willard.inventario.entity.ProductoEntity;
+import com.willard.inventario.model.Proveedor;
 import com.willard.inventario.models.Categoria;
 import com.willard.inventario.models.UnidadMedida;
 import com.willard.inventario.repository.CategoriaRepository;
 import com.willard.inventario.repository.ProductoRepository;
+import com.willard.inventario.repository.ProveedorRepository;
 import com.willard.inventario.repository.UnidadMedidaRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -18,15 +20,18 @@ public class ProductoService {
     private final ProductoRepository productoRepository;
     private final CategoriaRepository categoriaRepository;
     private final UnidadMedidaRepository unidadMedidaRepository;
+    private final ProveedorRepository proveedorRepository;
 
     // Inyección de dependencias por constructor
     public ProductoService(
             ProductoRepository productoRepository,
             CategoriaRepository categoriaRepository,
-            UnidadMedidaRepository unidadMedidaRepository) {
+            UnidadMedidaRepository unidadMedidaRepository,
+            ProveedorRepository proveedorRepository) {
         this.productoRepository = productoRepository;
         this.categoriaRepository = categoriaRepository;
         this.unidadMedidaRepository = unidadMedidaRepository;
+        this.proveedorRepository = proveedorRepository;
     }
 
     // Resuelve la categoría y unidad de medida enviadas (solo con id) a las entidades reales,
@@ -49,12 +54,20 @@ public class ProductoService {
         } else {
             producto.setUnidadMedida(null);
         }
+
+        if (producto.getProveedor() != null && producto.getProveedor().getId() != null) {
+            Proveedor proveedor = proveedorRepository.findById(producto.getProveedor().getId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                            "Proveedor no encontrado con id: " + producto.getProveedor().getId()));
+            producto.setProveedor(proveedor);
+        } else {
+            producto.setProveedor(null);
+        }
     }
 
     // RF-INV-01: Registrar producto
     public ProductoEntity registrarProducto(ProductoEntity producto) {
-        // Se ignora cualquier id enviado por el cliente para evitar
-        // que save() haga un merge y sobrescriba un producto existente.
+    
         producto.setId(null);
         resolverRelaciones(producto);
         return productoRepository.save(producto);
@@ -86,6 +99,7 @@ public class ProductoService {
 
         producto.setCategoria(datosProducto.getCategoria());
         producto.setUnidadMedida(datosProducto.getUnidadMedida());
+        producto.setProveedor(datosProducto.getProveedor());
         resolverRelaciones(producto);
 
         return productoRepository.save(producto);

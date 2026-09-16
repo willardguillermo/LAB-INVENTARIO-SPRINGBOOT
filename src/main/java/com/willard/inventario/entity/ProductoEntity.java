@@ -1,6 +1,7 @@
 package com.willard.inventario.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.willard.inventario.model.Proveedor;
 import com.willard.inventario.models.Categoria;
 import com.willard.inventario.models.UnidadMedida;
 import jakarta.persistence.*;
@@ -77,4 +78,9 @@ public class ProductoEntity {
     @JoinColumn(name = "unidad_medida_id")
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private UnidadMedida unidadMedida;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "proveedor_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    private Proveedor proveedor;
 }

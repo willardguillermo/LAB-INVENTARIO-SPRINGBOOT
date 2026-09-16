@@ -227,6 +227,10 @@
           <select id="producto-unidad"><option value="">— Sin unidad —</option></select>
         </div>
         <div>
+          <label>Proveedor</label>
+          <select id="producto-proveedor"><option value="">— Sin proveedor —</option></select>
+        </div>
+        <div>
           <label>Stock mínimo</label>
           <input type="number" id="producto-stockMinimo" min="0">
         </div>
@@ -274,7 +278,7 @@
         <table>
           <thead>
             <tr>
-              <th>ID</th><th>Nombre</th><th>Tipo</th><th>Categoría</th><th>Unidad</th>
+              <th>ID</th><th>Nombre</th><th>Tipo</th><th>Categoría</th><th>Unidad</th><th>Proveedor</th>
               <th>Stock (min/max/rep)</th><th>Lote</th><th>Venc.</th><th>Estado</th><th>Acciones</th>
             </tr>
           </thead>
@@ -448,16 +452,20 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
 // PRODUCTOS
 // ======================================================
 async function cargarSelectsProducto() {
-  const [categorias, unidades] = await Promise.all([
+  const [categorias, unidades, proveedores] = await Promise.all([
     apiFetch("/categorias").catch(() => []),
-    apiFetch("/unidades-medida").catch(() => [])
+    apiFetch("/unidades-medida").catch(() => []),
+    apiFetch("/proveedores").catch(() => [])
   ]);
   const selCat = document.getElementById("producto-categoria");
   const selUni = document.getElementById("producto-unidad");
+  const selProv = document.getElementById("producto-proveedor");
   selCat.innerHTML = '<option value="">— Sin categoría —</option>' +
     categorias.map(c => `<option value="${c.id}">${esc(c.nombre)}</option>`).join("");
   selUni.innerHTML = '<option value="">— Sin unidad —</option>' +
     unidades.map(u => `<option value="${u.id}">${esc(u.nombre)} (${esc(u.abreviatura)})</option>`).join("");
+  selProv.innerHTML = '<option value="">— Sin proveedor —</option>' +
+    proveedores.map(p => `<option value="${p.id}">${esc(p.razonSocial)}</option>`).join("");
 }
 
 function limpiarFormProducto() {
@@ -472,6 +480,7 @@ function limpiarFormProducto() {
 function productoDesdeForm() {
   const catId = document.getElementById("producto-categoria").value;
   const uniId = document.getElementById("producto-unidad").value;
+  const provId = document.getElementById("producto-proveedor").value;
   return {
     nombre: document.getElementById("producto-nombre").value,
     tipoProducto: document.getElementById("producto-tipo").value,
@@ -487,7 +496,8 @@ function productoDesdeForm() {
     manejaVencimiento: document.getElementById("producto-manejaVencimiento").checked,
     activo: document.getElementById("producto-activo").checked,
     categoria: catId ? { id: Number(catId) } : null,
-    unidadMedida: uniId ? { id: Number(uniId) } : null
+    unidadMedida: uniId ? { id: Number(uniId) } : null,
+    proveedor: provId ? { id: Number(provId) } : null
   };
 }
 
@@ -536,6 +546,7 @@ function editarProducto(p) {
   document.getElementById("producto-codigoBarras").value = p.codigoBarras || "";
   document.getElementById("producto-categoria").value = p.categoria ? p.categoria.id : "";
   document.getElementById("producto-unidad").value = p.unidadMedida ? p.unidadMedida.id : "";
+  document.getElementById("producto-proveedor").value = p.proveedor ? p.proveedor.id : "";
   document.getElementById("producto-stockMinimo").value = p.stockMinimo ?? "";
   document.getElementById("producto-stockMaximo").value = p.stockMaximo ?? "";
   document.getElementById("producto-puntoReposicion").value = p.puntoReposicion ?? "";
@@ -551,7 +562,7 @@ function editarProducto(p) {
 function renderProductos(lista) {
   const tbody = document.getElementById("productos-tbody");
   if (!lista.length) {
-    tbody.innerHTML = `<tr class="empty-row"><td colspan="10">Sin productos registrados</td></tr>`;
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="11">Sin productos registrados</td></tr>`;
     return;
   }
   tbody.innerHTML = lista.map(p => `
@@ -561,6 +572,7 @@ function renderProductos(lista) {
       <td>${esc(p.tipoProducto)}</td>
       <td>${p.categoria ? esc(p.categoria.nombre) : "—"}</td>
       <td>${p.unidadMedida ? esc(p.unidadMedida.abreviatura) : "—"}</td>
+      <td>${p.proveedor ? esc(p.proveedor.razonSocial) : "—"}</td>
       <td>${p.stockMinimo ?? "-"} / ${p.stockMaximo ?? "-"} / ${p.puntoReposicion ?? "-"}</td>
       <td>${p.manejaLote ? "Sí" : "No"}</td>
       <td>${p.manejaVencimiento ? "Sí" : "No"}</td>
@@ -764,6 +776,7 @@ document.getElementById("form-proveedor").addEventListener("submit", async (e) =
     }
     limpiarFormProveedor();
     cargarProveedores();
+    cargarSelectsProducto();
   } catch (err) {
     toast(err.message, "error");
   }
