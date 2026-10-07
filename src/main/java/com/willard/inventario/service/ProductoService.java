@@ -10,6 +10,7 @@ import com.willard.inventario.repository.CategoriaRepository;
 import com.willard.inventario.repository.ProductoRepository;
 import com.willard.inventario.repository.ProveedorRepository;
 import com.willard.inventario.repository.UnidadMedidaRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -83,6 +84,41 @@ public class ProductoService {
         producto.setUnidadMedida(unidadMedida);
         producto.setProveedor(proveedor);
 
+        return productoRepository.saveAndFlush(producto);
+    }
+
+    // RF-INV-03: Activar producto. Métodos separados de desactivar para que la auditoría
+    // registre la operación por el nombre del método.
+    @Transactional
+    public ProductoEntity activarProducto(Long id) {
+        return cambiarEstado(id, true);
+    }
+
+    // RF-INV-03: Desactivar producto (eliminación lógica)
+    @Transactional
+    public ProductoEntity desactivarProducto(Long id) {
+        return cambiarEstado(id, false);
+    }
+
+    private ProductoEntity cambiarEstado(Long id, boolean activo) {
+        ProductoEntity producto = buscarPorId(id);
+
+        if (producto.getActivo() != null && producto.getActivo() == activo) {
+            throw new ReglaNegocioException(HttpStatus.CONFLICT, "El producto '" + producto.getNombre()
+                    + "' ya está " + (activo ? "activo" : "inactivo"));
+        }
+        // Productos registrados antes de que categoría y unidad fueran obligatorias:
+        // Hibernate rechazaría el flush, así que se avisa qué falta corregir.
+        if (producto.getCategoria() == null) {
+            throw new ReglaNegocioException("El producto '" + producto.getNombre()
+                    + "' no tiene categoría asignada; edítalo antes de cambiar su estado");
+        }
+        if (producto.getUnidadMedida() == null) {
+            throw new ReglaNegocioException("El producto '" + producto.getNombre()
+                    + "' no tiene unidad de medida asignada; edítalo antes de cambiar su estado");
+        }
+
+        producto.setActivo(activo);
         return productoRepository.saveAndFlush(producto);
     }
 

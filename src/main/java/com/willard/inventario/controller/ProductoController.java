@@ -44,6 +44,18 @@ public class ProductoController {
         return ResponseEntity.ok(productoModificado);
     }
 
+    // RF-INV-03: Activar producto
+    @PatchMapping("/{id}/activar")
+    public ResponseEntity<ProductoEntity> activarProducto(@PathVariable Long id) {
+        return ResponseEntity.ok(productoService.activarProducto(id));
+    }
+
+    // RF-INV-03: Desactivar producto (eliminación lógica)
+    @PatchMapping("/{id}/desactivar")
+    public ResponseEntity<ProductoEntity> desactivarProducto(@PathVariable Long id) {
+        return ResponseEntity.ok(productoService.desactivarProducto(id));
+    }
+
     // Listar todos
     @GetMapping
     public ResponseEntity<List<ProductoEntity>> listarProductos() {
