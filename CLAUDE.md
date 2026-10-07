@@ -20,16 +20,35 @@ El README tiene los endpoints, las reglas de negocio de producto y cómo ejecuta
 
 Cada integrante trabaja en una rama `feature/...` y lleva su parte a `main` por Pull Request.
 
-## Roles acordados
+## Roles reales (P5, ya implementados)
+
+El rol ALMACENERO que se había planeado no se llegó a implementar; el equipo terminó con estos tres:
 
 | Rol | Permisos |
 |---|---|
-| ADMINISTRADOR | Todo (incluida la consulta de la bitácora de auditoría) |
-| ALMACENERO | Gestiona productos, categorías y proveedores |
-| MÉDICO | Solo consulta y búsqueda de productos |
+| ADMINISTRADOR | Todo: productos, categorías, unidades de medida, proveedores, usuarios, roles y la bitácora de auditoría (`GET /api/auditoria`) |
+| MEDICO | Solo lectura de productos, categorías, unidades de medida y proveedores |
+| RECEPCIONISTA | Puede iniciar sesión pero no tiene ningún permiso asignado todavía en ningún módulo (sirve para demostrar que el control de acceso por rol funciona también cuando un rol no tiene nada concedido) |
 
-Los métodos de `ProductoService` son públicos y no se llaman entre sí a través de `this`, así que
-se pueden proteger con `@PreAuthorize` directamente.
+Usuario inicial: `admin` / `admin123`. También hay usuarios de demostración `medico`/`medico123` y
+`recepcion`/`recepcion123` (los crea `InicializadorRoles` si no existen). Ver el README para el
+detalle de qué ve y qué puede hacer cada rol en el panel y en la API.
+
+Control de acceso en dos niveles:
+- **Método** (`@PreAuthorize`, `SecurityConfig` con `@EnableMethodSecurity`): en `ProductoController`
+  (los métodos de `ProductoService` son públicos y no se llaman entre sí a través de `this`, así que
+  se pueden proteger con `@PreAuthorize` directamente).
+- **URL** (`SecurityConfig.filterChain`, `authorizeHttpRequests`): para `/usuarios/**`, `/roles/**`,
+  `/api/usuarios/**`, `/api/roles/**`, `/api/auditoria/**` (solo ADMINISTRADOR) y para la
+  lectura/escritura de `/api/categorias`, `/api/unidades-medida` y `/api/proveedores`.
+
+Para `/api/**`, una petición sin sesión responde `401` en JSON y sin permiso responde `403` en JSON
+(`SecurityConfig.authenticationEntryPoint()`/`accessDeniedHandler()`); el resto de rutas (las
+plantillas Thymeleaf) sigue el flujo normal de `formLogin` y redirige a `/login`. Ambos handlers
+distinguen por el prefijo de la URL a propósito: registrar el entry point de la API con
+`defaultAuthenticationEntryPointFor` hacía que Spring lo usara también como *fallback* general
+(el primer mapeo registrado gana cuando ninguno coincide) y rompía el redirect a `/login` de las
+páginas Thymeleaf — por eso el filtro se arma a mano en vez de con ese método.
 
 ## Estructura
 
@@ -59,8 +78,13 @@ public Categoria registrar(Categoria categoria) { ... }
 public Proveedor desactivar(Long id) { ... }
 ```
 
-- Operaciones acordadas: `REGISTRAR`, `MODIFICAR`, `ACTIVAR`, `DESACTIVAR` (eliminación lógica).
-  Entidad en singular y sin tildes: `Producto`, `Categoria`, `UnidadMedida`, `Proveedor`, `Usuario`.
+- Operaciones acordadas: `REGISTRAR`, `MODIFICAR`, `ACTIVAR`, `DESACTIVAR` (eliminación lógica) y
+  `ELIMINAR` (borrado físico; hoy solo lo usa `ProveedorServiceImpl.eliminar`).
+  Entidad en singular y sin tildes: `Producto`, `Categoria`, `UnidadMedida`, `Proveedor`, `Usuario`,
+  `Rol`. Cuando un método "cambia el estado" sin distinguir activar/desactivar en el código (p. ej.
+  `cambiarEstado` en Usuario, Rol y Proveedor, que reciben el estado nuevo o alternan un booleano),
+  se audita como `MODIFICAR` con `detalle = "Cambio de estado"`: la anotación es estática y no puede
+  leer el resultado para decidir entre `ACTIVAR`/`DESACTIVAR`.
 - El id se toma del objeto devuelto (`getId()`); si el método no devuelve la entidad, del primer
   argumento `Long`. Conviene devolver la entidad.
 - Poner `@Transactional` en el método: la auditoría se guarda después del commit, así que una
@@ -70,16 +94,11 @@ public Proveedor desactivar(Long id) { ... }
 - Si el servicio implementa una interfaz (como `ProveedorServiceImpl`), la anotación va en el
   método de la **clase**, no en la interfaz.
 - Solo se auditan operaciones que terminan sin excepción.
-- El usuario sale de `UsuarioActualProvider.obtenerUsuario()`; hoy devuelve `"sistema"`.
+- El usuario sale de `UsuarioActualProvider.obtenerUsuario()`: lee el usuario autenticado del
+  `SecurityContextHolder` y solo devuelve `"sistema"` si no hay sesión (p. ej. una tarea en
+  segundo plano, que hoy no existe, pero deja la puerta abierta).
 
 ## Pendientes del equipo
-
-### Para P5 (Spring Security)
-
-- Cambiar solo `UsuarioActualProvider.obtenerUsuario()` para leer el `SecurityContextHolder`
-  (el TODO del archivo trae el código). El aspecto no necesita cambios.
-- Proteger `GET /api/auditoria` solo para ADMINISTRADOR, y los endpoints de productos según la
-  tabla de roles (MÉDICO: solo `GET /api/productos` y `GET /api/productos/{id}`).
 
 ### Generales
 

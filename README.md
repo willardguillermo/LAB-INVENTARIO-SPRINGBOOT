@@ -10,11 +10,14 @@ JPA/Hibernate y MySQL. Proyecto de la Evaluación 02 del curso Desarrollo de Apl
 - Manejo global de excepciones con respuestas JSON uniformes.
 - **Auditoría con AOP**: cada registro, modificación, activación y desactivación queda en una
   bitácora consultable (usuario, fecha y hora, operación, entidad e id del registro).
+- **Spring Security con roles** (ADMINISTRADOR, MEDICO, RECEPCIONISTA): login con usuario y
+  contraseña, control de acceso por rol a nivel de método y de URL, y usuarios/roles gestionables
+  desde el propio panel.
 - Panel web de prueba en `http://localhost:8080` (pestañas de Productos, Categorías, Unidades de
-  medida, Proveedores y Auditoría).
+  medida, Proveedores y Auditoría; Usuarios y Roles solo para ADMINISTRADOR).
 
-**Tecnologías:** Java 21, Spring Boot 4.1, Spring Data JPA, Hibernate, MySQL, Lombok, AspectJ,
-JUnit 5, Mockito y H2 (solo para pruebas).
+**Tecnologías:** Java 21, Spring Boot 4.1, Spring Data JPA, Hibernate, MySQL, Spring Security,
+Thymeleaf, Lombok, AspectJ, JUnit 5, Mockito y H2 (solo para pruebas).
 
 ## Requisitos
 
@@ -25,7 +28,7 @@ JUnit 5, Mockito y H2 (solo para pruebas).
 ## Cómo ejecutar
 
 La conexión se configura en `src/main/resources/application.properties`
-(por defecto `jdbc:mysql://localhost:3307/inventario_hospital`, usuario `root` sin contraseña).
+(por defecto `jdbc:mysql://localhost:3306/inventario_hospital`, usuario `root` sin contraseña).
 Hibernate crea y actualiza las tablas al arrancar (`ddl-auto=update`).
 
 ```bash
@@ -37,13 +40,49 @@ mvnw.cmd spring-boot:run
 ```
 
 Si tu MySQL usa otro puerto u otras credenciales, puedes indicarlos al arrancar sin editar el
-archivo. Por ejemplo, con MySQL en el puerto 3306 y creando la base si no existe:
+archivo (no edites `application.properties`: el equipo usa el puerto 3306). Por ejemplo, con MySQL
+en el puerto 3307 y creando la base si no existe:
 
 ```bash
-mvnw.cmd spring-boot:run "-Dspring-boot.run.arguments=--spring.datasource.url=jdbc:mysql://localhost:3306/inventario_hospital?createDatabaseIfNotExist=true"
+mvnw.cmd spring-boot:run "-Dspring-boot.run.arguments=--spring.datasource.url=jdbc:mysql://localhost:3307/inventario_hospital?createDatabaseIfNotExist=true"
 ```
 
-La API queda en `http://localhost:8080/api` y el panel web en `http://localhost:8080`.
+Si usas un puerto distinto al del equipo de forma habitual (por ejemplo, XAMPP en otra PC), conviene
+guardar ese comando en un `CLAUDE.local.md` propio (está en `.gitignore`) en vez de tocar
+`application.properties`.
+
+La API queda en `http://localhost:8080/api` y el panel web en `http://localhost:8080` (pide
+iniciar sesión primero; ver la sección de **Seguridad y roles**).
+
+## Seguridad y roles
+
+El panel web (`http://localhost:8080`) pide iniciar sesión en `/login`. Después de autenticarse,
+`/` muestra el panel y se adapta según el rol: el usuario y su rol se ven arriba, con un botón
+**Cerrar sesión**; **Usuarios** y **Roles** solo aparecen para ADMINISTRADOR; la pestaña
+**Auditoría** y todos los formularios/botones de escritura (registrar, editar, activar, desactivar)
+se ocultan para quien no sea ADMINISTRADOR.
+
+`InicializadorRoles` crea al arrancar los roles `ADMINISTRADOR`, `MEDICO` y `RECEPCIONISTA`, y estos
+usuarios de prueba si no existen:
+
+| Usuario | Contraseña | Rol | Qué puede hacer |
+|---|---|---|---|
+| `admin` | `admin123` | ADMINISTRADOR | Todo: productos, categorías, unidades de medida, proveedores, usuarios, roles y la auditoría |
+| `medico` | `medico123` | MEDICO | Solo consultar productos, categorías, unidades de medida y proveedores (sin escritura) |
+| `recepcion` | `recepcion123` | RECEPCIONISTA | Puede iniciar sesión, pero no tiene ningún permiso concedido todavía en ningún módulo |
+
+Un usuario con `estado = false`, o cuyo rol tenga `estado = false`, no puede iniciar sesión (login
+rechazado con un mensaje distinto al de usuario/contraseña incorrectos).
+
+`GET /api/sesion` devuelve los datos de la sesión activa (lo usa el panel):
+
+```json
+{ "username": "admin", "nombre": "Administrador del Sistema", "rol": "ADMINISTRADOR" }
+```
+
+Para cualquier ruta `/api/**`, una petición sin sesión responde `401` y sin permiso responde `403`,
+ambas en JSON con el mismo formato que los demás errores (ver abajo). El resto de páginas (las que
+no empiezan con `/api/`) redirige a `/login` en vez de devolver JSON.
 
 ## Endpoints
 
@@ -145,8 +184,8 @@ La bitácora es de solo lectura: los registros los crea automáticamente el aspe
 
 | Parámetro | Tipo | Descripción |
 |---|---|---|
-| `entidad` | texto | `Producto`, `Categoria`, `UnidadMedida`, `Proveedor`, ... |
-| `operacion` | texto | `REGISTRAR`, `MODIFICAR`, `ACTIVAR`, `DESACTIVAR` |
+| `entidad` | texto | `Producto`, `Categoria`, `UnidadMedida`, `Proveedor`, `Usuario`, `Rol` |
+| `operacion` | texto | `REGISTRAR`, `MODIFICAR`, `ACTIVAR`, `DESACTIVAR`, `ELIMINAR` |
 | `usuario` | texto | usuario que contiene el texto |
 | `desde`, `hasta` | fecha `AAAA-MM-DD` | rango de fechas, ambos días incluidos |
 | `pagina` | número | página, empieza en 0 (por defecto 0) |
@@ -159,7 +198,7 @@ curl "http://localhost:8080/api/auditoria?entidad=Producto&operacion=DESACTIVAR&
 ```json
 {
   "contenido": [
-    { "id": 3, "usuario": "sistema", "fechaHora": "2026-10-06T22:03:47",
+    { "id": 3, "usuario": "admin", "fechaHora": "2026-10-06T22:03:47",
       "operacion": "DESACTIVAR", "entidad": "Producto", "registroId": 39,
       "detalle": "Eliminación lógica" }
   ],
@@ -167,15 +206,18 @@ curl "http://localhost:8080/api/auditoria?entidad=Producto&operacion=DESACTIVAR&
 }
 ```
 
-Mientras no esté integrado Spring Security, el usuario registrado es `sistema`.
+El usuario registrado es el que tiene la sesión activa; si no hay sesión (no debería pasar detrás
+de Spring Security) queda como `sistema`. Solo ADMINISTRADOR puede consultar `/api/auditoria`.
 
 ### Otros módulos
 
-| Ruta base | Operaciones |
-|---|---|
-| `/api/categorias` | listar, consultar por id, registrar, modificar |
-| `/api/unidades-medida` | listar, consultar por id, registrar |
-| `/api/proveedores` | listar, consultar por id, registrar, modificar |
+| Ruta base | Operaciones | Lectura | Escritura |
+|---|---|---|---|
+| `/api/categorias` | listar, consultar por id, registrar, modificar | ADMINISTRADOR, MEDICO | ADMINISTRADOR |
+| `/api/unidades-medida` | listar, consultar por id, registrar | ADMINISTRADOR, MEDICO | ADMINISTRADOR |
+| `/api/proveedores` | listar, consultar por id, registrar, modificar, activar/desactivar, eliminar, productos del proveedor | ADMINISTRADOR, MEDICO | ADMINISTRADOR |
+| `/api/usuarios` | listar, consultar por id, registrar, modificar, cambiar estado | ADMINISTRADOR | ADMINISTRADOR |
+| `/api/roles` | listar, consultar por id, registrar, modificar, cambiar estado | ADMINISTRADOR | ADMINISTRADOR |
 
 ## Reglas de negocio de producto
 
