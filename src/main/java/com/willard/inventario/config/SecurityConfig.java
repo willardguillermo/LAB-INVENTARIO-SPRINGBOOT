@@ -14,7 +14,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.access.AccessDeniedHandler;
+import org.springframework.security.web.access.AccessDeniedHandlerImpl;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
+import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
 import org.thymeleaf.extras.springsecurity6.dialect.SpringSecurityDialect;
 
@@ -68,10 +70,13 @@ public class SecurityConfig {
                         .permitAll()
                 )
                 .exceptionHandling(handling -> handling
-                        // /api/**: 401/403 en JSON para que el fetch del frontend pueda mostrar un mensaje
-                        // en vez de recibir el HTML de la página de login o del error 403.
-                        .defaultAuthenticationEntryPointFor(jsonEntryPoint(), apiRequestMatcher())
-                        .defaultAccessDeniedHandlerFor(jsonAccessDeniedHandler(), apiRequestMatcher())
+                        // /api/**: 401/403 en JSON para que el fetch del frontend pueda mostrar un mensaje.
+                        // El resto (plantillas Thymeleaf) sigue el flujo normal: redirige a /login.
+                        // Nota: no se usa defaultAuthenticationEntryPointFor/defaultAccessDeniedHandlerFor
+                        // porque Spring usa el primer mapeo registrado como "default" cuando ninguno
+                        // coincide, y eso pisaba el redirect a /login de formLogin() con la respuesta JSON.
+                        .authenticationEntryPoint(authenticationEntryPoint())
+                        .accessDeniedHandler(accessDeniedHandler())
                 );
 
         return http.build();
@@ -90,18 +95,30 @@ public class SecurityConfig {
         };
     }
 
-    private org.springframework.security.web.util.matcher.RequestMatcher apiRequestMatcher() {
-        return request -> request.getRequestURI().startsWith("/api/");
+    private boolean esApi(jakarta.servlet.http.HttpServletRequest request) {
+        return request.getRequestURI().startsWith("/api/");
     }
 
-    private AuthenticationEntryPoint jsonEntryPoint() {
-        return (request, response, authException) ->
+    private AuthenticationEntryPoint authenticationEntryPoint() {
+        AuthenticationEntryPoint redirigirALogin = new LoginUrlAuthenticationEntryPoint("/login");
+        return (request, response, authException) -> {
+            if (esApi(request)) {
                 escribirError(response, HttpStatus.UNAUTHORIZED, "Debe iniciar sesión para acceder a este recurso");
+            } else {
+                redirigirALogin.commence(request, response, authException);
+            }
+        };
     }
 
-    private AccessDeniedHandler jsonAccessDeniedHandler() {
-        return (request, response, accessDeniedException) ->
+    private AccessDeniedHandler accessDeniedHandler() {
+        AccessDeniedHandler porDefecto = new AccessDeniedHandlerImpl();
+        return (request, response, accessDeniedException) -> {
+            if (esApi(request)) {
                 escribirError(response, HttpStatus.FORBIDDEN, "No tiene permiso para realizar esta operación");
+            } else {
+                porDefecto.handle(request, response, accessDeniedException);
+            }
+        };
     }
 
     // Cuerpo con el mismo formato que GlobalExceptionHandler (timestamp, status, error, message);
@@ -113,6 +130,7 @@ public class SecurityConfig {
                 Instant.now(), status.value(), status.getReasonPhrase(), mensaje.replace("\"", "\\\""));
 
         response.setStatus(status.value());
+        response.setCharacterEncoding("UTF-8");
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.getWriter().write(json);
     }
