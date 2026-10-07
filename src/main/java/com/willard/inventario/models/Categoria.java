@@ -1,6 +1,13 @@
 package com.willard.inventario.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.willard.inventario.entity.ProductoEntity;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "categoria")
@@ -10,14 +17,21 @@ public class Categoria {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 100)
+    @NotBlank(message = "El nombre de la categoría es obligatorio")
+    @Size(max = 100)
+    @Column(nullable = false, unique = true, length = 100)
     private String nombre;
 
+    @Size(max = 255)
     @Column(length = 255)
     private String descripcion;
 
     @Column(nullable = false)
     private Boolean estado = true;
+
+    @OneToMany(mappedBy = "categoria", fetch = FetchType.LAZY)
+    @JsonIgnore
+    private List<ProductoEntity> productos = new ArrayList<>();
 
     public Categoria() {}
 
@@ -32,4 +46,7 @@ public class Categoria {
 
     public Boolean getEstado() { return estado; }
     public void setEstado(Boolean estado) { this.estado = estado; }
+
+    public List<ProductoEntity> getProductos() { return productos; }
+    public void setProductos(List<ProductoEntity> productos) { this.productos = productos; }
 }
