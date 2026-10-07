@@ -1,6 +1,7 @@
 package com.willard.inventario.service;
 
 import com.willard.inventario.entity.ProductoEntity;
+import com.willard.inventario.exception.RecursoNoEncontradoException;
 import com.willard.inventario.model.Proveedor;
 import com.willard.inventario.models.Categoria;
 import com.willard.inventario.models.UnidadMedida;
@@ -8,9 +9,7 @@ import com.willard.inventario.repository.CategoriaRepository;
 import com.willard.inventario.repository.ProductoRepository;
 import com.willard.inventario.repository.ProveedorRepository;
 import com.willard.inventario.repository.UnidadMedidaRepository;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -39,7 +38,7 @@ public class ProductoService {
     private void resolverRelaciones(ProductoEntity producto) {
         if (producto.getCategoria() != null && producto.getCategoria().getId() != null) {
             Categoria categoria = categoriaRepository.findById(producto.getCategoria().getId())
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                    .orElseThrow(() -> new RecursoNoEncontradoException(
                             "Categoría no encontrada con id: " + producto.getCategoria().getId()));
             producto.setCategoria(categoria);
         } else {
@@ -48,7 +47,7 @@ public class ProductoService {
 
         if (producto.getUnidadMedida() != null && producto.getUnidadMedida().getId() != null) {
             UnidadMedida unidadMedida = unidadMedidaRepository.findById(producto.getUnidadMedida().getId())
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                    .orElseThrow(() -> new RecursoNoEncontradoException(
                             "Unidad de medida no encontrada con id: " + producto.getUnidadMedida().getId()));
             producto.setUnidadMedida(unidadMedida);
         } else {
@@ -57,7 +56,7 @@ public class ProductoService {
 
         if (producto.getProveedor() != null && producto.getProveedor().getId() != null) {
             Proveedor proveedor = proveedorRepository.findById(producto.getProveedor().getId())
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                    .orElseThrow(() -> new RecursoNoEncontradoException(
                             "Proveedor no encontrado con id: " + producto.getProveedor().getId()));
             producto.setProveedor(proveedor);
         } else {
@@ -77,7 +76,7 @@ public class ProductoService {
     public ProductoEntity modificarProducto(Long id, ProductoEntity datosProducto) {
 
         ProductoEntity producto = productoRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                .orElseThrow(() -> new RecursoNoEncontradoException(
                         "Producto no encontrado con id: " + id));
 
         producto.setNombre(datosProducto.getNombre());
@@ -113,7 +112,7 @@ public class ProductoService {
     // Consultar producto por ID
     public ProductoEntity buscarPorId(Long id) {
         return productoRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                .orElseThrow(() -> new RecursoNoEncontradoException(
                         "Producto no encontrado con id: " + id));
     }
 
