@@ -1,5 +1,6 @@
 package com.willard.inventario.impl;
 
+import com.willard.inventario.aop.Auditable;
 import com.willard.inventario.entity.ProductoEntity;
 import com.willard.inventario.model.Proveedor;
 import com.willard.inventario.repository.ProductoRepository;
@@ -8,6 +9,7 @@ import com.willard.inventario.service.ProveedorService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
@@ -20,12 +22,16 @@ public class ProveedorServiceImpl implements ProveedorService {
     private final ProductoRepository productoRepository;
 
     @Override
+    @Transactional
+    @Auditable(entidad = "Proveedor", operacion = "REGISTRAR")
     public Proveedor registrar(Proveedor proveedor) {
         proveedor.setId(null);
         return proveedorRepository.save(proveedor);
     }
 
     @Override
+    @Transactional
+    @Auditable(entidad = "Proveedor", operacion = "MODIFICAR")
     public Proveedor modificar(Long id, Proveedor proveedor) {
         Proveedor existente = proveedorRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Proveedor no encontrado con id " + id));
@@ -53,6 +59,8 @@ public class ProveedorServiceImpl implements ProveedorService {
     }
 
     @Override
+    @Transactional
+    @Auditable(entidad = "Proveedor", operacion = "ELIMINAR", detalle = "Eliminación física")
     public void eliminar(Long id) {
         Proveedor proveedor = buscarPorId(id);
         long cantidad = productoRepository.countByProveedorId(id);
@@ -65,6 +73,8 @@ public class ProveedorServiceImpl implements ProveedorService {
     }
 
     @Override
+    @Transactional
+    @Auditable(entidad = "Proveedor", operacion = "MODIFICAR", detalle = "Cambio de estado")
     public Proveedor cambiarEstado(Long id, String estado) {
         Proveedor proveedor = buscarPorId(id);
         proveedor.setEstado(estado);

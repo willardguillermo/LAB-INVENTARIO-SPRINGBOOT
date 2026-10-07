@@ -1,5 +1,6 @@
 package com.willard.inventario.service;
 
+import com.willard.inventario.aop.Auditable;
 import com.willard.inventario.models.Rol;
 import com.willard.inventario.models.Usuario;
 import com.willard.inventario.repository.UsuarioRepository;
@@ -7,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
@@ -32,6 +34,8 @@ public class UsuarioService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
     }
 
+    @Transactional
+    @Auditable(entidad = "Usuario", operacion = "REGISTRAR")
     public Usuario registrar(Usuario usuario) {
         if (usuario.getPassword() == null || usuario.getPassword().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La contraseña es obligatoria");
@@ -46,6 +50,8 @@ public class UsuarioService {
         return usuarioRepository.save(usuario);
     }
 
+    @Transactional
+    @Auditable(entidad = "Usuario", operacion = "MODIFICAR")
     public Usuario modificar(Long id, Usuario datos) {
         Usuario usuario = obtenerPorId(id);
         usuario.setNombre(datos.getNombre());
@@ -60,6 +66,8 @@ public class UsuarioService {
         return usuarioRepository.save(usuario);
     }
 
+    @Transactional
+    @Auditable(entidad = "Usuario", operacion = "MODIFICAR", detalle = "Cambio de estado")
     public Usuario cambiarEstado(Long id) {
         Usuario usuario = obtenerPorId(id);
         usuario.setEstado(!usuario.getEstado());

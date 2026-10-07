@@ -1,9 +1,11 @@
 package com.willard.inventario.service;
 
+import com.willard.inventario.aop.Auditable;
 import com.willard.inventario.models.Categoria;
 import com.willard.inventario.repository.CategoriaRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
@@ -27,6 +29,8 @@ public class CategoriaService {
     }
 
     // RF-INV-15: Registrar categorías
+    @Transactional
+    @Auditable(entidad = "Categoria", operacion = "REGISTRAR")
     public Categoria registrar(Categoria categoria) {
         categoria.setId(null);
         if (categoria.getEstado() == null) {
@@ -36,6 +40,8 @@ public class CategoriaService {
     }
 
     // RF-INV-16: Modificar categorías
+    @Transactional
+    @Auditable(entidad = "Categoria", operacion = "MODIFICAR")
     public Categoria modificar(Long id, Categoria datos) {
         Categoria categoria = obtenerPorId(id);
         categoria.setNombre(datos.getNombre());

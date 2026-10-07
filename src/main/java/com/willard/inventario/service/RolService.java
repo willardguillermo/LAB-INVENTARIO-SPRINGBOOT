@@ -1,9 +1,11 @@
 package com.willard.inventario.service;
 
+import com.willard.inventario.aop.Auditable;
 import com.willard.inventario.models.Rol;
 import com.willard.inventario.repository.RolRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
@@ -26,17 +28,23 @@ public class RolService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Rol no encontrado"));
     }
 
+    @Transactional
+    @Auditable(entidad = "Rol", operacion = "REGISTRAR")
     public Rol registrar(Rol rol) {
         rol.setId(null);
         return rolRepository.save(rol);
     }
 
+    @Transactional
+    @Auditable(entidad = "Rol", operacion = "MODIFICAR")
     public Rol modificar(Long id, Rol datos) {
         Rol rol = obtenerPorId(id);
         rol.setNombre(datos.getNombre());
         return rolRepository.save(rol);
     }
 
+    @Transactional
+    @Auditable(entidad = "Rol", operacion = "MODIFICAR", detalle = "Cambio de estado")
     public Rol cambiarEstado(Long id) {
         Rol rol = obtenerPorId(id);
         rol.setEstado(!rol.getEstado());
