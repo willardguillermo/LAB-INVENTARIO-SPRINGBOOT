@@ -10,10 +10,14 @@ import com.willard.inventario.repository.CategoriaRepository;
 import com.willard.inventario.repository.ProductoRepository;
 import com.willard.inventario.repository.ProveedorRepository;
 import com.willard.inventario.repository.UnidadMedidaRepository;
+import jakarta.persistence.criteria.JoinType;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -122,43 +126,59 @@ public class ProductoService {
         return productoRepository.saveAndFlush(producto);
     }
 
-    // Consultar todos los productos
-    public List<ProductoEntity> listarProductos() {
-        return productoRepository.findAll();
+    // RF-INV-14: Buscar y filtrar productos. Todos los filtros son opcionales y se combinan
+    // con AND; sin filtros devuelve todos los productos.
+    public List<ProductoEntity> buscarProductos(String nombre, String tipo, Boolean activo,
+                                                Long categoriaId, Long proveedorId) {
+        List<Specification<ProductoEntity>> filtros = new ArrayList<>();
+        filtros.add(traerRelaciones());
+
+        if (nombre != null && !nombre.isBlank()) {
+            filtros.add(contieneIgnorandoMayusculas("nombre", nombre));
+        }
+        if (tipo != null && !tipo.isBlank()) {
+            filtros.add(contieneIgnorandoMayusculas("tipoProducto", tipo));
+        }
+        if (activo != null) {
+            filtros.add((root, query, cb) -> cb.equal(root.get("activo"), activo));
+        }
+        if (categoriaId != null) {
+            filtros.add((root, query, cb) -> cb.equal(root.get("categoria").get("id"), categoriaId));
+        }
+        if (proveedorId != null) {
+            filtros.add((root, query, cb) -> cb.equal(root.get("proveedor").get("id"), proveedorId));
+        }
+
+        return productoRepository.findAll(Specification.allOf(filtros), Sort.by("id"));
     }
 
     // Consultar producto por ID
     public ProductoEntity buscarPorId(Long id) {
-        return productoRepository.findById(id)
+        return productoRepository.buscarConRelacionesPorId(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException(
                         "Producto no encontrado con id: " + id));
     }
 
-    // RF-INV-14: Buscar por nombre
-    public List<ProductoEntity> buscarPorNombre(String nombre) {
-        return productoRepository.findByNombreContainingIgnoreCase(nombre);
+    // LEFT JOIN FETCH de las relaciones: una sola consulta (sin N+1) y sin depender de
+    // open-in-view. Se fuerza LEFT porque con @NotNull Hibernate usaría INNER JOIN y
+    // ocultaría productos antiguos sin categoría o unidad.
+    private static Specification<ProductoEntity> traerRelaciones() {
+        return (root, query, cb) -> {
+            if (query.getResultType() != Long.class) {   // no aplica a consultas count
+                root.fetch("categoria", JoinType.LEFT);
+                root.fetch("unidadMedida", JoinType.LEFT);
+                root.fetch("proveedor", JoinType.LEFT);
+            }
+            return cb.conjunction();
+        };
     }
 
-    // RF-INV-14: Filtrar por tipo
-    public List<ProductoEntity> filtrarPorTipo(String tipoProducto) {
-        return productoRepository.findByTipoProductoIgnoreCase(tipoProducto);
-    }
-
-    // RF-INV-14: Filtrar por estado
-    public List<ProductoEntity> filtrarPorEstado(Boolean activo) {
-        return productoRepository.findByActivo(activo);
-    }
-
-    // RF-INV-14: Buscar por nombre y tipo
-    public List<ProductoEntity> buscarPorNombreYTipo(
-            String nombre,
-            String tipoProducto) {
-
-        return productoRepository
-                .findByNombreContainingIgnoreCaseAndTipoProductoIgnoreCase(
-                        nombre,
-                        tipoProducto
-                );
+    // Se escapan % y _ para que el texto del usuario se busque literal y no como comodín
+    private static Specification<ProductoEntity> contieneIgnorandoMayusculas(String campo, String texto) {
+        String literal = texto.trim().toLowerCase()
+                .replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
+        String patron = "%" + literal + "%";
+        return (root, query, cb) -> cb.like(cb.lower(root.get(campo)), patron, '\\');
     }
 
     // Regla de negocio: stock mínimo <= punto de reposición <= stock máximo.

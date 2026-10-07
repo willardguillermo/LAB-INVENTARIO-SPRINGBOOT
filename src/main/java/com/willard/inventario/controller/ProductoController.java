@@ -56,11 +56,18 @@ public class ProductoController {
         return ResponseEntity.ok(productoService.desactivarProducto(id));
     }
 
-    // Listar todos
+    // RF-INV-14: Buscar y filtrar productos.
+    // Ej: GET /api/productos?nombre=para&tipo=medicamento&activo=true&categoriaId=1&proveedorId=2
     @GetMapping
-    public ResponseEntity<List<ProductoEntity>> listarProductos() {
+    public ResponseEntity<List<ProductoEntity>> buscarProductos(
+            @RequestParam(required = false) String nombre,
+            @RequestParam(required = false) String tipo,
+            @RequestParam(required = false) Boolean activo,
+            @RequestParam(required = false) Long categoriaId,
+            @RequestParam(required = false) Long proveedorId) {
+
         return ResponseEntity.ok(
-                productoService.listarProductos()
+                productoService.buscarProductos(nombre, tipo, activo, categoriaId, proveedorId)
         );
     }
 
@@ -71,50 +78,6 @@ public class ProductoController {
 
         return ResponseEntity.ok(
                 productoService.buscarPorId(id)
-        );
-    }
-
-    // RF-INV-14: Buscar por nombre
-    @GetMapping("/buscar")
-    public ResponseEntity<List<ProductoEntity>> buscarPorNombre(
-            @RequestParam String nombre) {
-
-        return ResponseEntity.ok(
-                productoService.buscarPorNombre(nombre)
-        );
-    }
-
-    // RF-INV-14: Filtrar por tipo
-    @GetMapping("/filtrar/tipo")
-    public ResponseEntity<List<ProductoEntity>> filtrarPorTipo(
-            @RequestParam String tipoProducto) {
-
-        return ResponseEntity.ok(
-                productoService.filtrarPorTipo(tipoProducto)
-        );
-    }
-
-    // RF-INV-14: Filtrar por estado
-    @GetMapping("/filtrar/estado")
-    public ResponseEntity<List<ProductoEntity>> filtrarPorEstado(
-            @RequestParam Boolean activo) {
-
-        return ResponseEntity.ok(
-                productoService.filtrarPorEstado(activo)
-        );
-    }
-
-    // RF-INV-14: Buscar por nombre y tipo
-    @GetMapping("/filtrar")
-    public ResponseEntity<List<ProductoEntity>> buscarPorNombreYTipo(
-            @RequestParam String nombre,
-            @RequestParam String tipoProducto) {
-
-        return ResponseEntity.ok(
-                productoService.buscarPorNombreYTipo(
-                        nombre,
-                        tipoProducto
-                )
         );
     }
 }
