@@ -64,11 +64,48 @@ mvnw.cmd spring-boot:run "-Dspring-boot.run.arguments=--spring.datasource.url=jd
 - Pruebas de Producto (no requieren MySQL): `mvnw.cmd test -Dtest=ProductoServiceTest`
 - `mvnw.cmd test` completo falla en esta máquina porque `contextLoads` apunta al puerto 3307.
 
+## Plan de trabajo (rama `feature/productos-eval02`, sin push)
+
+Un commit por paso. Estado al último commit de esta rama:
+
+| # | Paso | Estado | Commit |
+|---|---|---|---|
+| 0 | CLAUDE.md, compilar y arrancar con MySQL 3306 | ✅ | `cf4c9a3` |
+| 1 | Excepciones propias + `GlobalExceptionHandler` ampliado | ✅ | `eec7d89` |
+| — | Reparto del equipo en CLAUDE.md | ✅ | `1181967` |
+| 2 | `@Size` en textos y `@NotNull` en categoría y unidad | ✅ | `f9548a8` |
+| 3 | `ProductoService`: `@Transactional`, `saveAndFlush`, reglas de stock, relaciones inactivas, PUT ignora `activo` | ✅ | `3e9391e` |
+| 4 | RF-INV-03: `PATCH /{id}/activar` y `/desactivar` (409 si ya está en ese estado) | ✅ | `0cf786f` |
+| 5 | RF-INV-14: `GET /api/productos` con filtros combinables; LEFT JOIN FETCH | ✅ | `9243447` |
+| 6 | Frontend de productos: filtros, activar/desactivar, XSS, selects solo activos | ✅ | `c0753ff` |
+| — | Plan en CLAUDE.md | ✅ | (este commit) |
+| — | Datos de demo (`datos-demo.sql`) | pendiente | |
+| — | Columna Acciones fija (sticky) en la tabla de productos | pendiente | |
+| 7 | `ProductoServiceTest` con Mockito | pendiente | |
+| 8 | H2 para pruebas, `contextLoads` sin MySQL; commit "Configura H2 para pruebas sin depender de MySQL" | pendiente | |
+| 9 | P2-B: `spring-boot-starter-aspectj`, entidad `Auditoria`, `@Auditable`, aspecto, evento AFTER_COMMIT guardado con REQUIRES_NEW, `UsuarioActualProvider` ("sistema" + TODO), anotar `ProductoService`, pendientes del equipo | pendiente | |
+| 10 | P2-C: `GET /api/auditoria` con filtros (entidad, operación, usuario, rango de fechas), más reciente primero, paginado (50 por defecto) con DTO propio (no serializar `Page`) | pendiente | |
+| 11 | P2-D: pestaña Auditoría en `index.html` (glassmorphism, sin XSS) | pendiente | |
+| 12 | P2-E: test de integración "registrar producto genera auditoría" (no `@Transactional`; limpiar en `@AfterEach`) | pendiente | |
+
+Decisiones ya tomadas (no volver a preguntar):
+
+- Categoría y unidad obligatorias (`@NotNull`); proveedor opcional. Se cargan con LEFT JOIN FETCH
+  para no ocultar productos antiguos sin categoría.
+- Se conserva una relación que el producto ya tenía aunque luego se inactive; no se puede asignar
+  una inactiva nueva.
+- Desactivar = eliminación lógica. En auditoría: operación `DESACTIVAR`, detalle "Eliminación lógica".
+- Auditoría: el aspecto (`@AfterReturning` sobre `@Auditable`) captura el usuario al crear el evento;
+  un `@TransactionalEventListener(AFTER_COMMIT, fallbackExecution = true)` lo guarda con
+  `REQUIRES_NEW`. Solo se audita lo confirmado.
+- Sin handler genérico `Exception` en `GlobalExceptionHandler`: convertiría el 403 de
+  `@PreAuthorize` en 500.
+
 ## Pendientes del equipo (no corregir sin preguntar)
 
 - XSS en `index.html`: las secciones de Categorías y Proveedores construyen el `onclick` con
   `JSON.stringify(...)` dentro del atributo HTML; un nombre con `&quot;` permite inyectar JavaScript.
-  (En Productos se corrige como parte de este trabajo.)
+  (En Productos ya se corrigió.)
 - `Categoria` y `UnidadMedida` no tienen `@NotBlank` y sus controladores no usan `@Valid`.
 - Inconsistencias: paquetes `model`/`models`/`entity`/`impl` mezclados, tres estilos de Lombok y
   tres convenciones de estado (`Boolean estado`, `Boolean activo`, `String "ACTIVO"`).
