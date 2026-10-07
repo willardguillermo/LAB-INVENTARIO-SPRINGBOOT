@@ -68,6 +68,18 @@
   }
   header p { margin: 4px 0 0; color: var(--muted-inverse); font-size: 0.85rem; }
 
+  #sesion-bar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 12px;
+    font-size: 0.85rem;
+  }
+  #sesion-bar #sesion-info { color: var(--text-inverse); font-weight: 600; }
+  #sesion-bar a { color: var(--muted-inverse); text-decoration: none; }
+  #sesion-bar a:hover { color: var(--text-inverse); text-decoration: underline; }
+  #sesion-bar button { padding: 6px 14px; font-size: 0.78rem; }
+
   nav {
     display: flex;
     gap: 6px;
@@ -298,6 +310,14 @@
 <header>
   <h1>Inventario y Almacén Hospitalario</h1>
   <p>Panel de prueba para las APIs REST (Productos · Categorías · Unidades de Medida · Proveedores · Auditoría)</p>
+  <div id="sesion-bar">
+    <span id="sesion-info"></span>
+    <a id="link-usuarios" class="solo-admin" href="/usuarios" style="display:none">Usuarios</a>
+    <a id="link-roles" class="solo-admin" href="/roles" style="display:none">Roles</a>
+    <form method="post" action="/logout" style="display:inline">
+      <button type="submit" class="action secondary" id="btn-logout">Cerrar sesión</button>
+    </form>
+  </div>
 </header>
 
 <nav>
@@ -305,14 +325,14 @@
   <button class="tab-btn" data-tab="categorias">Categorías</button>
   <button class="tab-btn" data-tab="unidades">Unidades de Medida</button>
   <button class="tab-btn" data-tab="proveedores">Proveedores</button>
-  <button class="tab-btn" data-tab="auditoria">Auditoría</button>
+  <button class="tab-btn solo-admin" data-tab="auditoria" style="display:none">Auditoría</button>
 </nav>
 
 <main>
 
   <!-- ================= PRODUCTOS ================= -->
   <section id="productos" class="tab active">
-    <div class="card">
+    <div class="card solo-admin" id="card-form-producto" style="display:none">
       <h2 id="producto-form-title">Registrar producto</h2>
       <form class="grid" id="form-producto">
         <input type="hidden" id="producto-id">
@@ -414,7 +434,7 @@
 
   <!-- ================= CATEGORIAS ================= -->
   <section id="categorias" class="tab">
-    <div class="card">
+    <div class="card solo-admin" id="card-form-categoria" style="display:none">
       <h2 id="categoria-form-title">Registrar categoría</h2>
       <form class="grid" id="form-categoria">
         <input type="hidden" id="categoria-id">
@@ -447,7 +467,7 @@
 
   <!-- ================= UNIDADES ================= -->
   <section id="unidades" class="tab">
-    <div class="card">
+    <div class="card solo-admin" id="card-form-unidad" style="display:none">
       <h2>Registrar unidad de medida</h2>
       <form class="grid" id="form-unidad">
         <div>
@@ -477,7 +497,7 @@
 
   <!-- ================= PROVEEDORES ================= -->
   <section id="proveedores" class="tab">
-    <div class="card">
+    <div class="card solo-admin" id="card-form-proveedor" style="display:none">
       <h2 id="proveedor-form-title">Registrar proveedor</h2>
       <form class="grid" id="form-proveedor">
         <input type="hidden" id="proveedor-id">
@@ -587,6 +607,10 @@ function toast(msg, type) {
 
 async function apiFetch(path, options) {
   const res = await fetch(API + path, options);
+  if (res.status === 401) {
+    window.location.href = "/login";
+    throw new Error("No autenticado");
+  }
   let body = null;
   const text = await res.text();
   try { body = text ? JSON.parse(text) : null; } catch (e) { body = text; }
@@ -797,10 +821,12 @@ function renderProductos(lista) {
       <td>${p.manejaVencimiento ? "Sí" : "No"}</td>
       <td><span class="badge ${p.activo ? "on" : "off"}">${p.activo ? "Activo" : "Inactivo"}</span></td>
       <td class="col-acciones"><div class="actions-cell">
+        ${esAdmin() ? `
         <button class="action secondary" data-accion="editar" data-id="${Number(p.id)}">Editar</button>
         ${p.activo
           ? `<button class="action danger" data-accion="desactivar" data-id="${Number(p.id)}">Desactivar</button>`
           : `<button class="action" data-accion="activar" data-id="${Number(p.id)}">Activar</button>`}
+        ` : "—"}
       </div></td>
     </tr>
   `).join("");
@@ -910,7 +936,7 @@ async function cargarCategorias() {
         <td>${esc(c.nombre)}</td>
         <td>${esc(c.descripcion)}</td>
         <td><span class="badge ${c.estado ? "on" : "off"}">${c.estado ? "Activa" : "Inactiva"}</span></td>
-        <td><button class="action secondary" onclick='editarCategoria(${JSON.stringify(c)})'>Editar</button></td>
+        <td>${esAdmin() ? `<button class="action secondary" onclick='editarCategoria(${JSON.stringify(c)})'>Editar</button>` : "—"}</td>
       </tr>
     `).join("") : `<tr class="empty-row"><td colspan="5">Sin categorías registradas</td></tr>`;
   } catch (err) {
@@ -1032,7 +1058,7 @@ async function cargarProveedores() {
         <td>${esc(p.contacto)}</td>
         <td>${esc(p.telefono)}</td>
         <td><span class="badge ${p.estado === "ACTIVO" ? "on" : "off"}">${esc(p.estado)}</span></td>
-        <td><button class="action secondary" onclick='editarProveedor(${JSON.stringify(p)})'>Editar</button></td>
+        <td>${esAdmin() ? `<button class="action secondary" onclick='editarProveedor(${JSON.stringify(p)})'>Editar</button>` : "—"}</td>
       </tr>
     `).join("") : `<tr class="empty-row"><td colspan="7">Sin proveedores registrados</td></tr>`;
   } catch (err) {
@@ -1123,8 +1149,30 @@ document.getElementById("aud-siguiente").addEventListener("click", () => {
 // Se recarga cada vez que se abre la pestaña, para ver las operaciones recién hechas
 document.querySelector('.tab-btn[data-tab="auditoria"]').addEventListener("click", cargarAuditoria);
 
+// ======================================================
+// SESION Y PERMISOS
+// ======================================================
+let rolActual = null;
+
+function esAdmin() {
+  return rolActual === "ADMINISTRADOR";
+}
+
+async function cargarSesion() {
+  const sesion = await apiFetch("/sesion");
+  rolActual = sesion.rol;
+  document.getElementById("sesion-info").textContent =
+    `${sesion.nombre} (${sesion.username}) · ${sesion.rol}`;
+
+  const admin = esAdmin();
+  document.querySelectorAll(".solo-admin").forEach(el => {
+    el.style.display = admin ? "" : "none";
+  });
+}
+
 // ---------- init ----------
 (async function init() {
+  await cargarSesion();
   await cargarSelectsProducto();
   cargarProductos();
   cargarCategorias();
