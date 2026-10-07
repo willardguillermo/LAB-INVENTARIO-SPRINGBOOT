@@ -26,7 +26,7 @@
 
                 <!-- Opciones visibles para ADMINISTRADOR y MEDICO -->
                 <li class="nav-item" sec:authorize="hasAnyRole('ADMINISTRADOR', 'MEDICO')">
-                    <a class="nav-link" th:href="@{/api/productos}">Productos</a>
+                    <a class="nav-link" th:href="@{/}">Productos</a>
                 </li>
 
             </ul>

@@ -11,8 +11,9 @@ public class LoginController {
         return "login";
     }
 
+    // Sirve el panel estático (src/main/resources/static/index.html); no hay plantilla "index".
     @GetMapping("/")
     public String index() {
-        return "index";
+        return "forward:/index.html";
     }
 }
