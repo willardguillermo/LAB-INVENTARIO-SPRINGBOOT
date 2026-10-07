@@ -39,7 +39,7 @@ Producto tiene `@ManyToOne` con Categoria y UnidadMedida (obligatorias) y Provee
    - El paquete `exception/` (incluido `GlobalExceptionHandler`).
    - Auditoría: el paquete `aop/` (anotación `@Auditable`, aspecto y componente de usuario actual),
      `entity/Auditoria`, `repository/AuditoriaRepository`, `service/AuditoriaService`,
-     `controller/AuditoriaController` y sus pruebas en `src/test/`.
+     `controller/AuditoriaController`, `dto/PaginaRespuesta` y sus pruebas en `src/test/`.
    - `pom.xml`, solo para agregar `spring-boot-starter-aspectj` y H2 (scope test).
    - `src/test/resources/application.properties` (H2 para pruebas).
    - `src/main/resources/datos-demo.sql` (datos de demo, no se ejecuta automáticamente).
@@ -103,8 +103,8 @@ Un commit por paso. Estado al último commit de esta rama:
 | — | Columna Acciones fija (sticky) en la tabla de productos | ✅ | `8bd61c0` |
 | 7 | `ProductoServiceTest` con Mockito (26 pruebas) | ✅ | `079fed3` |
 | 8 | H2 para pruebas, `contextLoads` sin MySQL | ✅ | `210336b` |
-| 9 | P2-B: `spring-boot-starter-aspectj`, entidad `Auditoria`, `@Auditable`, aspecto, evento AFTER_COMMIT guardado con REQUIRES_NEW, `UsuarioActualProvider` ("sistema" + TODO), anotar `ProductoService`, pendientes del equipo | ✅ | (este commit) |
-| 10 | P2-C: `GET /api/auditoria` con filtros (entidad, operación, usuario, rango de fechas), más reciente primero, paginado (50 por defecto) con DTO propio (no serializar `Page`) | pendiente | |
+| 9 | P2-B: `spring-boot-starter-aspectj`, entidad `Auditoria`, `@Auditable`, aspecto, evento AFTER_COMMIT guardado con REQUIRES_NEW, `UsuarioActualProvider` ("sistema" + TODO), anotar `ProductoService`, pendientes del equipo | ✅ | `a0c5def` |
+| 10 | P2-C: `GET /api/auditoria` con filtros (entidad, operación, usuario, rango de fechas), más reciente primero, paginado (50 por defecto) con DTO propio (no serializar `Page`) | ✅ | (este commit) |
 | 11 | P2-D: pestaña Auditoría en `index.html` (glassmorphism, sin XSS) | pendiente | |
 | 12 | P2-E: test de integración "registrar producto genera auditoría" (no `@Transactional`; limpiar en `@AfterEach`) | pendiente | |
 
