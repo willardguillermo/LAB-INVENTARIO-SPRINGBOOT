@@ -15,7 +15,8 @@
                 </div>
                 <div class="card-body">
                     <div th:if="${param.error}" class="alert alert-danger" role="alert">
-                        Usuario o contraseña incorrectos.
+                        <span th:if="${param.error[0] == 'deshabilitado'}">Tu usuario está inactivo o tu rol fue desactivado. Contacta al administrador.</span>
+                        <span th:unless="${param.error[0] == 'deshabilitado'}">Usuario o contraseña incorrectos.</span>
                     </div>
                     <div th:if="${param.logout}" class="alert alert-info" role="alert">
                         Has cerrado sesión correctamente.

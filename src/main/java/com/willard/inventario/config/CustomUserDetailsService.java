@@ -22,10 +22,15 @@ public class CustomUserDetailsService implements UserDetailsService {
 
         String nombreRol = "ROLE_" + usuario.getRol().getNombre().toUpperCase();
 
+        // enabled=false hace que Spring lance DisabledException en el login: un usuario
+        // desactivado, o cuyo rol fue desactivado, no puede iniciar sesión.
+        boolean habilitado = Boolean.TRUE.equals(usuario.getEstado())
+                && Boolean.TRUE.equals(usuario.getRol().getEstado());
+
         return new User(
                 usuario.getUsername(),
                 usuario.getPassword(),
-                true, // Indica que el usuario está activo
+                habilitado,
                 true, true, true,
                 Collections.singletonList(new SimpleGrantedAuthority(nombreRol))
         );
