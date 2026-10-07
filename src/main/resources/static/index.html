@@ -261,6 +261,21 @@
   .actions-cell button { font-size: 0.75rem; padding: 5px 10px; }
   .empty-row td { text-align: center; color: var(--muted); padding: 22px; }
 
+  /* Tabla de productos: columna Acciones fija a la derecha durante el scroll horizontal */
+  #productos .col-acciones {
+    position: sticky;
+    right: 0;
+    z-index: 1;
+    background: rgba(241, 245, 249, 0.82);
+    backdrop-filter: blur(14px) saturate(160%);
+    -webkit-backdrop-filter: blur(14px) saturate(160%);
+    box-shadow: -10px 0 14px -10px rgba(15, 23, 42, 0.45);
+  }
+  #productos th.col-acciones { background: rgba(248, 250, 252, 0.9); }
+  #productos tr:hover td.col-acciones {
+    background: linear-gradient(rgba(37, 99, 235, 0.06), rgba(37, 99, 235, 0.06)), rgba(241, 245, 249, 0.82);
+  }
+
   ::-webkit-scrollbar { height: 8px; width: 8px; }
   ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.25); border-radius: 999px; }
 </style>
@@ -374,7 +389,7 @@
           <thead>
             <tr>
               <th>ID</th><th>Nombre</th><th>Tipo</th><th>Categoría</th><th>Unidad</th><th>Proveedor</th>
-              <th>Stock (min/max/rep)</th><th>Lote</th><th>Venc.</th><th>Estado</th><th>Acciones</th>
+              <th>Stock (min/max/rep)</th><th>Lote</th><th>Venc.</th><th>Estado</th><th class="col-acciones">Acciones</th>
             </tr>
           </thead>
           <tbody id="productos-tbody"></tbody>
@@ -725,12 +740,12 @@ function renderProductos(lista) {
       <td>${p.manejaLote ? "Sí" : "No"}</td>
       <td>${p.manejaVencimiento ? "Sí" : "No"}</td>
       <td><span class="badge ${p.activo ? "on" : "off"}">${p.activo ? "Activo" : "Inactivo"}</span></td>
-      <td class="actions-cell">
+      <td class="col-acciones"><div class="actions-cell">
         <button class="action secondary" data-accion="editar" data-id="${Number(p.id)}">Editar</button>
         ${p.activo
           ? `<button class="action danger" data-accion="desactivar" data-id="${Number(p.id)}">Desactivar</button>`
           : `<button class="action" data-accion="activar" data-id="${Number(p.id)}">Activar</button>`}
-      </td>
+      </div></td>
     </tr>
   `).join("");
 }
