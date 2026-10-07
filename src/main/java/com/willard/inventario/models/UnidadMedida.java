@@ -1,6 +1,11 @@
 package com.willard.inventario.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.willard.inventario.entity.ProductoEntity;
 import jakarta.persistence.*;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "unidad_medida")
@@ -19,6 +24,10 @@ public class UnidadMedida {
     @Column(nullable = false)
     private Boolean estado = true;
 
+    @OneToMany(mappedBy = "unidadMedida", fetch = FetchType.LAZY)
+    @JsonIgnore
+    private List<ProductoEntity> productos = new ArrayList<>();
+
     public UnidadMedida() {}
 
     public Long getId() { return id; }
@@ -32,4 +41,7 @@ public class UnidadMedida {
 
     public Boolean getEstado() { return estado; }
     public void setEstado(Boolean estado) { this.estado = estado; }
+
+    public List<ProductoEntity> getProductos() { return productos; }
+    public void setProductos(List<ProductoEntity> productos) { this.productos = productos; }
 }
