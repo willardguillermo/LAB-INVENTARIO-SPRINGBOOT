@@ -102,8 +102,8 @@ Un commit por paso. Estado al último commit de esta rama:
 | — | Datos de demo (`datos-demo.sql`) | ✅ | `17b7f34` |
 | — | Columna Acciones fija (sticky) en la tabla de productos | ✅ | `8bd61c0` |
 | 7 | `ProductoServiceTest` con Mockito (26 pruebas) | ✅ | `079fed3` |
-| 8 | H2 para pruebas, `contextLoads` sin MySQL | ✅ | (este commit) |
-| 9 | P2-B: `spring-boot-starter-aspectj`, entidad `Auditoria`, `@Auditable`, aspecto, evento AFTER_COMMIT guardado con REQUIRES_NEW, `UsuarioActualProvider` ("sistema" + TODO), anotar `ProductoService`, pendientes del equipo | pendiente | |
+| 8 | H2 para pruebas, `contextLoads` sin MySQL | ✅ | `210336b` |
+| 9 | P2-B: `spring-boot-starter-aspectj`, entidad `Auditoria`, `@Auditable`, aspecto, evento AFTER_COMMIT guardado con REQUIRES_NEW, `UsuarioActualProvider` ("sistema" + TODO), anotar `ProductoService`, pendientes del equipo | ✅ | (este commit) |
 | 10 | P2-C: `GET /api/auditoria` con filtros (entidad, operación, usuario, rango de fechas), más reciente primero, paginado (50 por defecto) con DTO propio (no serializar `Page`) | pendiente | |
 | 11 | P2-D: pestaña Auditoría en `index.html` (glassmorphism, sin XSS) | pendiente | |
 | 12 | P2-E: test de integración "registrar producto genera auditoría" (no `@Transactional`; limpiar en `@AfterEach`) | pendiente | |
@@ -122,6 +122,39 @@ Decisiones ya tomadas (no volver a preguntar):
   `@PreAuthorize` en 500.
 
 ## Pendientes del equipo (no corregir sin preguntar)
+
+### Auditoría (P2): cómo auditar sus propios métodos
+
+La infraestructura está en `aop/` (`@Auditable`, `AuditoriaAspect`, `AuditoriaListener`,
+`UsuarioActualProvider`) y la bitácora en la tabla `auditoria`. Cada compañero anota **sus** métodos
+de servicio (Willard no los toca):
+
+```java
+@Transactional
+@Auditable(entidad = "Categoria", operacion = "REGISTRAR")
+public Categoria registrar(Categoria categoria) { ... }
+
+@Transactional
+@Auditable(entidad = "Proveedor", operacion = "DESACTIVAR", detalle = "Eliminación lógica")
+public Proveedor desactivar(Long id) { ... }
+```
+
+- Operaciones acordadas: `REGISTRAR`, `MODIFICAR`, `ACTIVAR`, `DESACTIVAR` (eliminación lógica).
+  Entidad en singular y sin tildes: `Producto`, `Categoria`, `UnidadMedida`, `Proveedor`, `Usuario`.
+- El id se toma del objeto devuelto (`getId()`); si el método no devuelve la entidad, del primer
+  argumento `Long`. Conviene devolver la entidad.
+- Poner `@Transactional` en el método: así la auditoría se guarda solo si el commit funciona
+  (sin transacción también se audita, pero en el momento).
+- El método debe ser `public` y llamarse desde otro bean (el controlador). Una llamada interna
+  `this.metodo()` no pasa por el aspecto.
+- `ProveedorServiceImpl` implementa una interfaz: la anotación va en el método de la **clase**
+  `ProveedorServiceImpl`, no en la interfaz.
+- Solo se auditan operaciones que terminan sin excepción.
+- **Mijael (P5)**: cuando exista Spring Security, cambiar solo `UsuarioActualProvider.obtenerUsuario()`
+  para leer el `SecurityContextHolder` (el TODO del archivo trae el código). Además, proteger
+  `GET /api/auditoria` solo para ADMINISTRADOR.
+
+### Otros pendientes
 
 - XSS en `index.html`: las secciones de Categorías y Proveedores construyen el `onclick` con
   `JSON.stringify(...)` dentro del atributo HTML; un nombre con `&quot;` permite inyectar JavaScript.

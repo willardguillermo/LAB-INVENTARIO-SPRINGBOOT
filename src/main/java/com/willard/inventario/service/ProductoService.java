@@ -1,5 +1,6 @@
 package com.willard.inventario.service;
 
+import com.willard.inventario.aop.Auditable;
 import com.willard.inventario.entity.ProductoEntity;
 import com.willard.inventario.exception.RecursoNoEncontradoException;
 import com.willard.inventario.exception.ReglaNegocioException;
@@ -43,6 +44,7 @@ public class ProductoService {
 
     // RF-INV-01: Registrar producto
     @Transactional
+    @Auditable(entidad = "Producto", operacion = "REGISTRAR")
     public ProductoEntity registrarProducto(ProductoEntity producto) {
         producto.setId(null);
         // Todo producto nace activo; el estado solo cambia con activar/desactivar (RF-INV-03)
@@ -59,6 +61,7 @@ public class ProductoService {
 
     // RF-INV-02: Modificar producto. No cambia "activo": para eso están activar/desactivar.
     @Transactional
+    @Auditable(entidad = "Producto", operacion = "MODIFICAR")
     public ProductoEntity modificarProducto(Long id, ProductoEntity datosProducto) {
         ProductoEntity producto = buscarPorId(id);
 
@@ -94,12 +97,14 @@ public class ProductoService {
     // RF-INV-03: Activar producto. Métodos separados de desactivar para que la auditoría
     // registre la operación por el nombre del método.
     @Transactional
+    @Auditable(entidad = "Producto", operacion = "ACTIVAR")
     public ProductoEntity activarProducto(Long id) {
         return cambiarEstado(id, true);
     }
 
     // RF-INV-03: Desactivar producto (eliminación lógica)
     @Transactional
+    @Auditable(entidad = "Producto", operacion = "DESACTIVAR", detalle = "Eliminación lógica")
     public ProductoEntity desactivarProducto(Long id) {
         return cambiarEstado(id, false);
     }
