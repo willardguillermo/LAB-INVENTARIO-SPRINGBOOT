@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+<th:block th:fragment="estilos">
+<style>
+  :root {
+    --bg-a: #0b1220;
+    --bg-b: #142033;
+    --glass: rgba(255, 255, 255, 0.62);
+    --glass-strong: rgba(255, 255, 255, 0.78);
+    --glass-border: rgba(255, 255, 255, 0.55);
+    --glass-dark: rgba(15, 23, 42, 0.55);
+    --glass-dark-border: rgba(255, 255, 255, 0.12);
+    --text: #101828;
+    --text-inverse: #f1f5f9;
+    --muted: #5b6472;
+    --muted-inverse: #a3b0c2;
+    --primary: #2563eb;
+    --primary-2: #06b6d4;
+    --primary-dark: #1d4ed8;
+    --danger: #dc2626;
+    --success: #16a34a;
+    --radius: 18px;
+  }
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: "Segoe UI", system-ui, Arial, sans-serif;
+    color: var(--text);
+    background: var(--bg-a);
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    background:
+      radial-gradient(560px 420px at 8% 10%, rgba(37, 99, 235, 0.55), transparent 60%),
+      radial-gradient(520px 420px at 92% 20%, rgba(6, 182, 212, 0.45), transparent 60%),
+      radial-gradient(600px 500px at 25% 95%, rgba(139, 92, 246, 0.35), transparent 60%),
+      radial-gradient(520px 420px at 85% 90%, rgba(16, 185, 129, 0.3), transparent 60%),
+      linear-gradient(160deg, var(--bg-a), var(--bg-b));
+    filter: blur(10px);
+  }
+
+  header, nav, main { position: relative; z-index: 1; }
+
+  header {
+    background: var(--glass-dark);
+    backdrop-filter: blur(18px) saturate(140%);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    border-bottom: 1px solid var(--glass-dark-border);
+    color: var(--text-inverse);
+    padding: 20px 28px;
+  }
+  header h1 { margin: 0; font-size: 1.35rem; letter-spacing: 0.2px; }
+  header p { margin: 4px 0 0; color: var(--muted-inverse); font-size: 0.85rem; }
+
+  #sesion-bar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 12px;
+    font-size: 0.85rem;
+    flex-wrap: wrap;
+  }
+  #sesion-bar #sesion-info { color: var(--text-inverse); font-weight: 600; }
+  #sesion-bar a { color: var(--muted-inverse); text-decoration: none; }
+  #sesion-bar a:hover { color: var(--text-inverse); text-decoration: underline; }
+  #sesion-bar a.activo { color: var(--text-inverse); font-weight: 700; }
+  #sesion-bar button { padding: 6px 14px; font-size: 0.78rem; }
+
+  nav {
+    display: flex;
+    gap: 6px;
+    background: var(--glass-dark);
+    backdrop-filter: blur(18px) saturate(140%);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    border-bottom: 1px solid var(--glass-dark-border);
+    padding: 10px 24px;
+    overflow-x: auto;
+    position: sticky;
+    top: 0;
+  }
+  nav a {
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--muted-inverse);
+    padding: 9px 18px;
+    cursor: pointer;
+    font-size: 0.88rem;
+    border-radius: 999px;
+    white-space: nowrap;
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+  nav a:hover { color: var(--text-inverse); background: rgba(255, 255, 255, 0.08); }
+  nav a.active {
+    color: white;
+    font-weight: 600;
+    background: linear-gradient(135deg, var(--primary), var(--primary-2));
+    border-color: transparent;
+    box-shadow: 0 4px 16px rgba(37, 99, 235, 0.4);
+  }
+
+  main {
+    max-width: 1150px;
+    margin: 28px auto 60px;
+    padding: 0 20px;
+  }
+
+  .card {
+    background: var(--glass);
+    backdrop-filter: blur(22px) saturate(160%);
+    -webkit-backdrop-filter: blur(22px) saturate(160%);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius);
+    padding: 22px 24px;
+    margin-bottom: 22px;
+    box-shadow: 0 8px 32px rgba(15, 23, 42, 0.18);
+  }
+  .card h2 {
+    margin-top: 0;
+    font-size: 1.05rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card h2::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-2));
+    display: inline-block;
+  }
+
+  form.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px 14px;
+    align-items: start;
+  }
+  label {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-bottom: 4px;
+    font-weight: 600;
+  }
+  input, select {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid rgba(16, 24, 40, 0.14);
+    border-radius: 10px;
+    font-size: 0.9rem;
+    background: var(--glass-strong);
+    color: var(--text);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  input:focus, select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+  }
+  .form-hint { font-size: 0.72rem; color: var(--muted); margin-top: 4px; }
+
+  button.action, a.action {
+    background: linear-gradient(135deg, var(--primary), var(--primary-2));
+    color: white;
+    border: none;
+    padding: 9px 18px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    height: fit-content;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    text-decoration: none;
+    display: inline-block;
+  }
+  button.action:hover, a.action:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(37, 99, 235, 0.45); }
+  button.action:active { transform: translateY(0); }
+  button.secondary, a.secondary {
+    background: rgba(16, 24, 40, 0.06);
+    color: var(--text);
+    box-shadow: none;
+    border: 1px solid rgba(16, 24, 40, 0.12);
+  }
+  button.secondary:hover, a.secondary:hover { background: rgba(16, 24, 40, 0.1); box-shadow: none; }
+  button.danger { background: linear-gradient(135deg, var(--danger), #f97316); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  th, td {
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(16, 24, 40, 0.08);
+    white-space: nowrap;
+  }
+  th {
+    color: var(--muted);
+    font-weight: 700;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background: rgba(255, 255, 255, 0.35);
+  }
+  tr:hover td { background: rgba(37, 99, 235, 0.06); }
+
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    border: 1px solid transparent;
+  }
+  .badge.on { background: rgba(22, 163, 74, 0.12); color: var(--success); border-color: rgba(22, 163, 74, 0.25); }
+  .badge.off { background: rgba(220, 38, 38, 0.1); color: var(--danger); border-color: rgba(220, 38, 38, 0.22); }
+  .badge.inactivo { background: rgba(220, 38, 38, 0.1); color: var(--danger); border-color: rgba(220, 38, 38, 0.22); }
+
+  .actions-cell { display: flex; gap: 6px; flex-wrap: wrap; }
+  .actions-cell button, .actions-cell a { font-size: 0.75rem; padding: 5px 10px; }
+
+  .alerta {
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    margin-bottom: 16px;
+  }
+  .alerta.error { background: rgba(220, 38, 38, 0.12); color: #fecaca; border: 1px solid rgba(220, 38, 38, 0.35); }
+  .alerta.info { background: rgba(37, 99, 235, 0.12); color: #bfdbfe; border: 1px solid rgba(37, 99, 235, 0.35); }
+  .card .alerta.error { color: #991b1b; }
+
+  .field-error { color: var(--danger); font-size: 0.75rem; margin-top: 4px; }
+</style>
+</th:block>
+</head>
+<body>
+
+<th:block th:fragment="barra(activo)">
+<header>
+  <h1>Inventario y Almacén Hospitalario</h1>
+  <p>Panel de administración (Productos · Categorías · Unidades de Medida · Proveedores · Auditoría · Usuarios · Roles)</p>
+  <div id="sesion-bar" sec:authorize="isAuthenticated()">
+    <span id="sesion-info" th:text="${sesionUsuario.nombre} + ' (' + ${sesionUsuario.username} + ') · ' + ${sesionUsuario.rol.nombre}">Usuario</span>
+    <form method="post" action="/logout" style="display:inline">
+      <button type="submit" class="action secondary">Cerrar sesión</button>
+    </form>
+  </div>
+</header>
+<nav>
+  <a th:href="@{/}" th:classappend="${activo == 'inventario'} ? 'active'">Inventario</a>
+  <a sec:authorize="hasRole('ADMINISTRADOR')" th:href="@{/usuarios}" th:classappend="${activo == 'usuarios'} ? 'active'">Usuarios</a>
+  <a sec:authorize="hasRole('ADMINISTRADOR')" th:href="@{/roles}" th:classappend="${activo == 'roles'} ? 'active'">Roles</a>
+</nav>
+</th:block>
+
+</body>
+</html>
