@@ -49,5 +49,23 @@ public class InicializadorRoles implements CommandLineRunner {
                 usuarioRepository.save(admin);
             });
         }
+
+        // 3. Usuarios de demostración, uno por rol, para probar el control de acceso
+        crearUsuarioDemoSiNoExiste("medico", "Médico de Demostración", "medico123", "MEDICO");
+        crearUsuarioDemoSiNoExiste("recepcion", "Recepcionista de Demostración", "recepcion123", "RECEPCIONISTA");
+    }
+
+    private void crearUsuarioDemoSiNoExiste(String username, String nombre, String password, String nombreRol) {
+        if (usuarioRepository.findByUsername(username).isEmpty()) {
+            rolRepository.findByNombre(nombreRol).ifPresent(rol -> {
+                Usuario usuario = new Usuario();
+                usuario.setNombre(nombre);
+                usuario.setUsername(username);
+                usuario.setPassword(passwordEncoder.encode(password));
+                usuario.setRol(rol);
+                usuario.setEstado(true);
+                usuarioRepository.save(usuario);
+            });
+        }
     }
 }
