@@ -289,39 +289,39 @@
         <input type="hidden" id="producto-id">
         <div>
           <label>Nombre *</label>
-          <input type="text" id="producto-nombre" required>
+          <input type="text" id="producto-nombre" required maxlength="150">
         </div>
         <div>
           <label>Tipo de producto *</label>
-          <input type="text" id="producto-tipo" required>
+          <input type="text" id="producto-tipo" required maxlength="100">
         </div>
         <div>
           <label>Descripción</label>
-          <input type="text" id="producto-descripcion">
+          <input type="text" id="producto-descripcion" maxlength="500">
         </div>
         <div>
           <label>Marca</label>
-          <input type="text" id="producto-marca">
+          <input type="text" id="producto-marca" maxlength="100">
         </div>
         <div>
           <label>Fabricante</label>
-          <input type="text" id="producto-fabricante">
+          <input type="text" id="producto-fabricante" maxlength="150">
         </div>
         <div>
           <label>Código</label>
-          <input type="text" id="producto-codigo">
+          <input type="text" id="producto-codigo" maxlength="50">
         </div>
         <div>
           <label>Código de barras</label>
-          <input type="text" id="producto-codigoBarras">
+          <input type="text" id="producto-codigoBarras" maxlength="100">
         </div>
         <div>
-          <label>Categoría</label>
-          <select id="producto-categoria"><option value="">— Sin categoría —</option></select>
+          <label>Categoría *</label>
+          <select id="producto-categoria" required><option value="">— Selecciona —</option></select>
         </div>
         <div>
-          <label>Unidad de medida</label>
-          <select id="producto-unidad"><option value="">— Sin unidad —</option></select>
+          <label>Unidad de medida *</label>
+          <select id="producto-unidad" required><option value="">— Selecciona —</option></select>
         </div>
         <div>
           <label>Proveedor</label>
@@ -347,10 +347,6 @@
           <input type="checkbox" id="producto-manejaVencimiento">
           <label style="margin:0">Maneja vencimiento</label>
         </div>
-        <div class="checkbox-field">
-          <input type="checkbox" id="producto-activo" checked>
-          <label style="margin:0">Activo</label>
-        </div>
         <div style="display:flex; gap:8px;">
           <button type="submit" class="action" id="producto-submit-btn">Guardar</button>
           <button type="button" class="action secondary" id="producto-cancel-btn" style="display:none">Cancelar</button>
@@ -368,6 +364,8 @@
           <option value="true">Activos</option>
           <option value="false">Inactivos</option>
         </select>
+        <select id="filtro-categoria"><option value="">Todas las categorías</option></select>
+        <select id="filtro-proveedor"><option value="">Todos los proveedores</option></select>
         <button class="action" id="btn-filtrar">Buscar</button>
         <button class="action secondary" id="btn-limpiar-filtro">Limpiar</button>
       </div>
@@ -523,7 +521,9 @@ async function apiFetch(path, options) {
   try { body = text ? JSON.parse(text) : null; } catch (e) { body = text; }
   if (!res.ok) {
     const msg = (body && (body.message || body.error)) || `Error HTTP ${res.status}`;
-    throw new Error(msg);
+    const err = new Error(msg);
+    err.errores = body && body.errores;   // detalle por campo de los errores de validación
+    throw err;
   }
   return body;
 }
@@ -548,32 +548,67 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
 // ======================================================
 // PRODUCTOS
 // ======================================================
+// Productos del último listado, por id: los botones de la tabla solo llevan data-id
+// (nunca el objeto serializado en un onclick, que permitía inyectar JavaScript).
+const productosPorId = new Map();
+
+function opcionesHtml(lista, textoDe) {
+  return lista.map(x => `<option value="${Number(x.id)}">${esc(textoDe(x))}</option>`).join("");
+}
+
 async function cargarSelectsProducto() {
   const [categorias, unidades, proveedores] = await Promise.all([
     apiFetch("/categorias").catch(() => []),
     apiFetch("/unidades-medida").catch(() => []),
     apiFetch("/proveedores").catch(() => [])
   ]);
-  const selCat = document.getElementById("producto-categoria");
-  const selUni = document.getElementById("producto-unidad");
-  const selProv = document.getElementById("producto-proveedor");
-  selCat.innerHTML = '<option value="">— Sin categoría —</option>' +
-    categorias.map(c => `<option value="${c.id}">${esc(c.nombre)}</option>`).join("");
-  selUni.innerHTML = '<option value="">— Sin unidad —</option>' +
-    unidades.map(u => `<option value="${u.id}">${esc(u.nombre)} (${esc(u.abreviatura)})</option>`).join("");
-  selProv.innerHTML = '<option value="">— Sin proveedor —</option>' +
-    proveedores.map(p => `<option value="${p.id}">${esc(p.razonSocial)}</option>`).join("");
+  const textoUnidad = u => `${u.nombre} (${u.abreviatura})`;
+
+  // Formulario: solo relaciones activas (la API rechaza asignar inactivas)
+  document.getElementById("producto-categoria").innerHTML = '<option value="">— Selecciona —</option>' +
+    opcionesHtml(categorias.filter(c => c.estado), c => c.nombre);
+  document.getElementById("producto-unidad").innerHTML = '<option value="">— Selecciona —</option>' +
+    opcionesHtml(unidades.filter(u => u.estado), textoUnidad);
+  document.getElementById("producto-proveedor").innerHTML = '<option value="">— Sin proveedor —</option>' +
+    opcionesHtml(proveedores.filter(p => p.estado === "ACTIVO"), p => p.razonSocial);
+
+  // Filtros: todas, porque puede haber productos asociados a relaciones ya inactivas
+  const filtroCat = document.getElementById("filtro-categoria");
+  const filtroProv = document.getElementById("filtro-proveedor");
+  const catElegida = filtroCat.value, provElegido = filtroProv.value;
+  filtroCat.innerHTML = '<option value="">Todas las categorías</option>' + opcionesHtml(categorias, c => c.nombre);
+  filtroProv.innerHTML = '<option value="">Todos los proveedores</option>' + opcionesHtml(proveedores, p => p.razonSocial);
+  filtroCat.value = catElegida;
+  filtroProv.value = provElegido;
+}
+
+// Al editar, la relación actual puede estar inactiva y no figurar en el select:
+// se agrega como opción temporal para no cambiarla sin querer.
+function seleccionarRelacion(selectId, relacion, texto) {
+  const sel = document.getElementById(selectId);
+  sel.querySelectorAll("option[data-temporal]").forEach(o => o.remove());
+  if (!relacion) { sel.value = ""; return; }
+  const id = String(relacion.id);
+  if (![...sel.options].some(o => o.value === id)) {
+    const opt = document.createElement("option");
+    opt.value = id;
+    opt.textContent = `${texto} (inactivo)`;
+    opt.dataset.temporal = "true";
+    sel.appendChild(opt);
+  }
+  sel.value = id;
 }
 
 function limpiarFormProducto() {
   document.getElementById("form-producto").reset();
   document.getElementById("producto-id").value = "";
-  document.getElementById("producto-activo").checked = true;
+  document.querySelectorAll("#form-producto option[data-temporal]").forEach(o => o.remove());
   document.getElementById("producto-form-title").textContent = "Registrar producto";
   document.getElementById("producto-submit-btn").textContent = "Guardar";
   document.getElementById("producto-cancel-btn").style.display = "none";
 }
 
+// "activo" no se envía: al registrar siempre es true y el PUT lo ignora (usar Activar/Desactivar)
 function productoDesdeForm() {
   const catId = document.getElementById("producto-categoria").value;
   const uniId = document.getElementById("producto-unidad").value;
@@ -591,7 +626,6 @@ function productoDesdeForm() {
     puntoReposicion: numOrNull("producto-puntoReposicion"),
     manejaLote: document.getElementById("producto-manejaLote").checked,
     manejaVencimiento: document.getElementById("producto-manejaVencimiento").checked,
-    activo: document.getElementById("producto-activo").checked,
     categoria: catId ? { id: Number(catId) } : null,
     unidadMedida: uniId ? { id: Number(uniId) } : null,
     proveedor: provId ? { id: Number(provId) } : null
@@ -601,6 +635,11 @@ function productoDesdeForm() {
 function numOrNull(id) {
   const v = document.getElementById(id).value;
   return v === "" ? null : Number(v);
+}
+
+// Incluye el detalle por campo que devuelve la API en los errores de validación
+function mensajeErrorProducto(err) {
+  return err.errores ? `${err.message}: ${Object.values(err.errores).join("; ")}` : err.message;
 }
 
 document.getElementById("form-producto").addEventListener("submit", async (e) => {
@@ -626,7 +665,7 @@ document.getElementById("form-producto").addEventListener("submit", async (e) =>
     limpiarFormProducto();
     cargarProductos();
   } catch (err) {
-    toast(err.message, "error");
+    toast(mensajeErrorProducto(err), "error");
   }
 });
 
@@ -641,82 +680,98 @@ function editarProducto(p) {
   document.getElementById("producto-fabricante").value = p.fabricante || "";
   document.getElementById("producto-codigo").value = p.codigo || "";
   document.getElementById("producto-codigoBarras").value = p.codigoBarras || "";
-  document.getElementById("producto-categoria").value = p.categoria ? p.categoria.id : "";
-  document.getElementById("producto-unidad").value = p.unidadMedida ? p.unidadMedida.id : "";
-  document.getElementById("producto-proveedor").value = p.proveedor ? p.proveedor.id : "";
+  seleccionarRelacion("producto-categoria", p.categoria, p.categoria && p.categoria.nombre);
+  seleccionarRelacion("producto-unidad", p.unidadMedida, p.unidadMedida && p.unidadMedida.nombre);
+  seleccionarRelacion("producto-proveedor", p.proveedor, p.proveedor && p.proveedor.razonSocial);
   document.getElementById("producto-stockMinimo").value = p.stockMinimo ?? "";
   document.getElementById("producto-stockMaximo").value = p.stockMaximo ?? "";
   document.getElementById("producto-puntoReposicion").value = p.puntoReposicion ?? "";
   document.getElementById("producto-manejaLote").checked = !!p.manejaLote;
   document.getElementById("producto-manejaVencimiento").checked = !!p.manejaVencimiento;
-  document.getElementById("producto-activo").checked = !!p.activo;
   document.getElementById("producto-form-title").textContent = `Editando producto #${p.id}`;
   document.getElementById("producto-submit-btn").textContent = "Actualizar";
   document.getElementById("producto-cancel-btn").style.display = "inline-block";
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
+// RF-INV-03
+async function cambiarEstadoProducto(id, accion) {
+  try {
+    const p = await apiFetch(`/productos/${id}/${accion}`, { method: "PATCH" });
+    toast(`Producto "${p.nombre}" ${accion === "activar" ? "activado" : "desactivado"}`, "success");
+    cargarProductos();
+  } catch (err) {
+    toast(mensajeErrorProducto(err), "error");
+  }
+}
+
 function renderProductos(lista) {
   const tbody = document.getElementById("productos-tbody");
+  productosPorId.clear();
+  lista.forEach(p => productosPorId.set(String(p.id), p));
   if (!lista.length) {
-    tbody.innerHTML = `<tr class="empty-row"><td colspan="11">Sin productos registrados</td></tr>`;
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="11">Sin productos que mostrar</td></tr>`;
     return;
   }
   tbody.innerHTML = lista.map(p => `
     <tr>
-      <td>${p.id}</td>
+      <td>${Number(p.id)}</td>
       <td>${esc(p.nombre)}</td>
       <td>${esc(p.tipoProducto)}</td>
       <td>${p.categoria ? esc(p.categoria.nombre) : "—"}</td>
       <td>${p.unidadMedida ? esc(p.unidadMedida.abreviatura) : "—"}</td>
       <td>${p.proveedor ? esc(p.proveedor.razonSocial) : "—"}</td>
-      <td>${p.stockMinimo ?? "-"} / ${p.stockMaximo ?? "-"} / ${p.puntoReposicion ?? "-"}</td>
+      <td>${esc(p.stockMinimo ?? "-")} / ${esc(p.stockMaximo ?? "-")} / ${esc(p.puntoReposicion ?? "-")}</td>
       <td>${p.manejaLote ? "Sí" : "No"}</td>
       <td>${p.manejaVencimiento ? "Sí" : "No"}</td>
       <td><span class="badge ${p.activo ? "on" : "off"}">${p.activo ? "Activo" : "Inactivo"}</span></td>
       <td class="actions-cell">
-        <button class="action secondary" onclick='editarProducto(${JSON.stringify(p).replace(/'/g, "&#39;")})'>Editar</button>
+        <button class="action secondary" data-accion="editar" data-id="${Number(p.id)}">Editar</button>
+        ${p.activo
+          ? `<button class="action danger" data-accion="desactivar" data-id="${Number(p.id)}">Desactivar</button>`
+          : `<button class="action" data-accion="activar" data-id="${Number(p.id)}">Activar</button>`}
       </td>
     </tr>
   `).join("");
 }
 
-async function cargarProductos() {
-  try {
-    const data = await apiFetch("/productos");
-    renderProductos(data);
-  } catch (err) {
-    toast(err.message, "error");
-  }
-}
-
-document.getElementById("btn-filtrar").addEventListener("click", async () => {
-  const nombre = document.getElementById("filtro-nombre").value.trim();
-  const tipo = document.getElementById("filtro-tipo").value.trim();
-  const estado = document.getElementById("filtro-estado").value;
-  try {
-    let data;
-    if (nombre && tipo) {
-      data = await apiFetch(`/productos/filtrar?nombre=${encodeURIComponent(nombre)}&tipoProducto=${encodeURIComponent(tipo)}`);
-    } else if (nombre) {
-      data = await apiFetch(`/productos/buscar?nombre=${encodeURIComponent(nombre)}`);
-    } else if (tipo) {
-      data = await apiFetch(`/productos/filtrar/tipo?tipoProducto=${encodeURIComponent(tipo)}`);
-    } else if (estado) {
-      data = await apiFetch(`/productos/filtrar/estado?activo=${estado}`);
-    } else {
-      data = await apiFetch("/productos");
-    }
-    renderProductos(data);
-  } catch (err) {
-    toast(err.message, "error");
+document.getElementById("productos-tbody").addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-accion]");
+  if (!btn) return;
+  const id = btn.dataset.id;
+  if (btn.dataset.accion === "editar") {
+    const p = productosPorId.get(id);
+    if (p) editarProducto(p);
+  } else {
+    cambiarEstadoProducto(id, btn.dataset.accion);
   }
 });
 
+// RF-INV-14: todos los filtros se combinan en una sola consulta.
+// Se usa también para recargar la tabla respetando los filtros elegidos.
+async function cargarProductos() {
+  const filtros = {
+    nombre: document.getElementById("filtro-nombre").value.trim(),
+    tipo: document.getElementById("filtro-tipo").value.trim(),
+    activo: document.getElementById("filtro-estado").value,
+    categoriaId: document.getElementById("filtro-categoria").value,
+    proveedorId: document.getElementById("filtro-proveedor").value
+  };
+  const params = new URLSearchParams();
+  Object.entries(filtros).forEach(([k, v]) => { if (v) params.append(k, v); });
+  const query = params.toString();
+  try {
+    renderProductos(await apiFetch("/productos" + (query ? "?" + query : "")));
+  } catch (err) {
+    toast(mensajeErrorProducto(err), "error");
+  }
+}
+
+document.getElementById("btn-filtrar").addEventListener("click", cargarProductos);
+
 document.getElementById("btn-limpiar-filtro").addEventListener("click", () => {
-  document.getElementById("filtro-nombre").value = "";
-  document.getElementById("filtro-tipo").value = "";
-  document.getElementById("filtro-estado").value = "";
+  ["filtro-nombre", "filtro-tipo", "filtro-estado", "filtro-categoria", "filtro-proveedor"]
+    .forEach(id => { document.getElementById(id).value = ""; });
   cargarProductos();
 });
 
