@@ -99,8 +99,8 @@ Un commit por paso. Estado al último commit de esta rama:
 | 6 | Frontend de productos: filtros, activar/desactivar, XSS, selects solo activos | ✅ | `c0753ff` |
 | — | Plan en CLAUDE.md | ✅ | `6533448` |
 | — | Datos de demo (`datos-demo.sql`) | ✅ | `17b7f34` |
-| — | Columna Acciones fija (sticky) en la tabla de productos | ✅ | (este commit) |
-| 7 | `ProductoServiceTest` con Mockito | pendiente | |
+| — | Columna Acciones fija (sticky) en la tabla de productos | ✅ | `8bd61c0` |
+| 7 | `ProductoServiceTest` con Mockito (26 pruebas) | ✅ | (este commit) |
 | 8 | H2 para pruebas, `contextLoads` sin MySQL; commit "Configura H2 para pruebas sin depender de MySQL" | pendiente | |
 | 9 | P2-B: `spring-boot-starter-aspectj`, entidad `Auditoria`, `@Auditable`, aspecto, evento AFTER_COMMIT guardado con REQUIRES_NEW, `UsuarioActualProvider` ("sistema" + TODO), anotar `ProductoService`, pendientes del equipo | pendiente | |
 | 10 | P2-C: `GET /api/auditoria` con filtros (entidad, operación, usuario, rango de fechas), más reciente primero, paginado (50 por defecto) con DTO propio (no serializar `Page`) | pendiente | |
