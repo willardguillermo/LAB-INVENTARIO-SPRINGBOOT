@@ -29,6 +29,9 @@ public class CategoriaService {
     // RF-INV-15: Registrar categorías
     public Categoria registrar(Categoria categoria) {
         categoria.setId(null);
+        if (categoria.getEstado() == null) {
+            categoria.setEstado(true);
+        }
         return categoriaRepository.save(categoria);
     }
 
@@ -37,7 +40,9 @@ public class CategoriaService {
         Categoria categoria = obtenerPorId(id);
         categoria.setNombre(datos.getNombre());
         categoria.setDescripcion(datos.getDescripcion());
-        categoria.setEstado(datos.getEstado());
+        if (datos.getEstado() != null) {
+            categoria.setEstado(datos.getEstado());
+        }
         return categoriaRepository.save(categoria);
     }
 }

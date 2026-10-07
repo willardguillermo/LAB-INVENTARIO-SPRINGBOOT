@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 // JpaSpecificationExecutor: RF-INV-14, búsqueda con filtros combinables (ver ProductoService)
@@ -23,4 +24,9 @@ public interface ProductoRepository extends JpaRepository<ProductoEntity, Long>,
             where p.id = :id
             """)
     Optional<ProductoEntity> buscarConRelacionesPorId(@Param("id") Long id);
+
+    // Usadas por el módulo de Proveedor (validar si tiene productos asociados antes de desactivar).
+    List<ProductoEntity> findByProveedorId(Long proveedorId);
+
+    long countByProveedorId(Long proveedorId);
 }
