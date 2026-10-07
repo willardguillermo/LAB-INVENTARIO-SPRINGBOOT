@@ -3,6 +3,8 @@ package com.willard.inventario.models;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.willard.inventario.entity.ProductoEntity;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,9 +17,13 @@ public class UnidadMedida {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotBlank(message = "El nombre de la unidad es obligatorio")
+    @Size(max = 50)
     @Column(nullable = false, length = 50)
     private String nombre;
 
+    @NotBlank(message = "La abreviatura es obligatoria")
+    @Size(max = 10)
     @Column(nullable = false, length = 10)
     private String abreviatura;
 

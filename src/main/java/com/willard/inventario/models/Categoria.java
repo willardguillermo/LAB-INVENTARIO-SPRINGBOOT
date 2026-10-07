@@ -3,6 +3,8 @@ package com.willard.inventario.models;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.willard.inventario.entity.ProductoEntity;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,9 +17,12 @@ public class Categoria {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 100)
+    @NotBlank(message = "El nombre de la categoría es obligatorio")
+    @Size(max = 100)
+    @Column(nullable = false, unique = true, length = 100)
     private String nombre;
 
+    @Size(max = 255)
     @Column(length = 255)
     private String descripcion;
 

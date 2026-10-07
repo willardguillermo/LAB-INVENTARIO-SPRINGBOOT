@@ -2,6 +2,7 @@ package com.willard.inventario.controller;
 
 import com.willard.inventario.models.Categoria;
 import com.willard.inventario.service.CategoriaService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -29,12 +30,12 @@ public class CategoriaController {
     }
 
     @PostMapping
-    public ResponseEntity<Categoria> registrar(@RequestBody Categoria categoria) {
+    public ResponseEntity<Categoria> registrar(@Valid @RequestBody Categoria categoria) {
         return new ResponseEntity<>(categoriaService.registrar(categoria), HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
-    public Categoria modificar(@PathVariable Long id, @RequestBody Categoria categoria) {
+    public Categoria modificar(@PathVariable Long id, @Valid @RequestBody Categoria categoria) {
         return categoriaService.modificar(id, categoria);
     }
 }
