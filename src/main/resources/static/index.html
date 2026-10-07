@@ -276,6 +276,19 @@
     background: linear-gradient(rgba(37, 99, 235, 0.06), rgba(37, 99, 235, 0.06)), rgba(241, 245, 249, 0.82);
   }
 
+  /* Pestaña Auditoría */
+  #auditoria .badge.op-registrar { background: rgba(37, 99, 235, 0.12); color: var(--primary-dark); border-color: rgba(37, 99, 235, 0.25); }
+  #auditoria .badge.op-modificar { background: rgba(217, 119, 6, 0.12); color: #b45309; border-color: rgba(217, 119, 6, 0.25); }
+  #auditoria .aud-fecha {
+    display: flex; align-items: center; gap: 6px; margin: 0;
+    font-size: 0.78rem; color: var(--muted);
+  }
+  #auditoria .aud-paginacion {
+    display: flex; align-items: center; justify-content: flex-end; gap: 12px;
+    margin-top: 14px; font-size: 0.82rem; color: var(--muted);
+  }
+  #auditoria .aud-paginacion button:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
   ::-webkit-scrollbar { height: 8px; width: 8px; }
   ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.25); border-radius: 999px; }
 </style>
@@ -284,7 +297,7 @@
 
 <header>
   <h1>Inventario y Almacén Hospitalario</h1>
-  <p>Panel de prueba para las APIs REST (Productos · Categorías · Unidades de Medida · Proveedores)</p>
+  <p>Panel de prueba para las APIs REST (Productos · Categorías · Unidades de Medida · Proveedores · Auditoría)</p>
 </header>
 
 <nav>
@@ -292,6 +305,7 @@
   <button class="tab-btn" data-tab="categorias">Categorías</button>
   <button class="tab-btn" data-tab="unidades">Unidades de Medida</button>
   <button class="tab-btn" data-tab="proveedores">Proveedores</button>
+  <button class="tab-btn" data-tab="auditoria">Auditoría</button>
 </nav>
 
 <main>
@@ -510,6 +524,48 @@
         <thead><tr><th>ID</th><th>RUC</th><th>Razón social</th><th>Contacto</th><th>Teléfono</th><th>Estado</th><th>Acciones</th></tr></thead>
         <tbody id="proveedores-tbody"></tbody>
       </table>
+    </div>
+  </section>
+
+  <!-- ================= AUDITORIA ================= -->
+  <section id="auditoria" class="tab">
+    <div class="card">
+      <h2>Bitácora de auditoría</h2>
+      <div class="filters">
+        <select id="aud-entidad">
+          <option value="">Todas las entidades</option>
+          <option value="Producto">Producto</option>
+          <option value="Categoria">Categoría</option>
+          <option value="UnidadMedida">Unidad de medida</option>
+          <option value="Proveedor">Proveedor</option>
+          <option value="Usuario">Usuario</option>
+        </select>
+        <select id="aud-operacion">
+          <option value="">Todas las operaciones</option>
+          <option value="REGISTRAR">Registrar</option>
+          <option value="MODIFICAR">Modificar</option>
+          <option value="ACTIVAR">Activar</option>
+          <option value="DESACTIVAR">Desactivar</option>
+        </select>
+        <input type="text" id="aud-usuario" placeholder="Usuario..." maxlength="100">
+        <label class="aud-fecha">Desde <input type="date" id="aud-desde"></label>
+        <label class="aud-fecha">Hasta <input type="date" id="aud-hasta"></label>
+        <button class="action" id="btn-aud-filtrar">Buscar</button>
+        <button class="action secondary" id="btn-aud-limpiar">Limpiar</button>
+      </div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr><th>Fecha y hora</th><th>Usuario</th><th>Operación</th><th>Entidad</th><th>ID registro</th><th>Detalle</th></tr>
+          </thead>
+          <tbody id="auditoria-tbody"></tbody>
+        </table>
+      </div>
+      <div class="aud-paginacion">
+        <button class="action secondary" id="aud-anterior">&larr; Anterior</button>
+        <span id="aud-info"></span>
+        <button class="action secondary" id="aud-siguiente">Siguiente &rarr;</button>
+      </div>
     </div>
   </section>
 
@@ -983,6 +1039,89 @@ async function cargarProveedores() {
     toast(err.message, "error");
   }
 }
+
+// ======================================================
+// AUDITORÍA (P2) - solo lectura
+// ======================================================
+let paginaAuditoria = 0;
+
+// "2026-10-06T22:03:47" -> "06/10/2026 22:03:47" (sin pasar por Date para no mover la zona horaria)
+function formatearFechaHora(valor) {
+  if (!valor) return "";
+  const [fecha, hora = ""] = String(valor).split("T");
+  const [a, m, d] = fecha.split("-");
+  return `${d}/${m}/${a} ${hora.substring(0, 8)}`;
+}
+
+const CLASES_OPERACION = {
+  REGISTRAR: "op-registrar",
+  MODIFICAR: "op-modificar",
+  ACTIVAR: "on",
+  DESACTIVAR: "off"
+};
+
+async function cargarAuditoria() {
+  const filtros = {
+    entidad: document.getElementById("aud-entidad").value,
+    operacion: document.getElementById("aud-operacion").value,
+    usuario: document.getElementById("aud-usuario").value.trim(),
+    desde: document.getElementById("aud-desde").value,
+    hasta: document.getElementById("aud-hasta").value
+  };
+  const params = new URLSearchParams();
+  Object.entries(filtros).forEach(([k, v]) => { if (v) params.append(k, v); });
+  params.append("pagina", paginaAuditoria);
+
+  try {
+    renderAuditoria(await apiFetch("/auditoria?" + params.toString()));
+  } catch (err) {
+    toast(err.message, "error");
+  }
+}
+
+function renderAuditoria(pagina) {
+  const tbody = document.getElementById("auditoria-tbody");
+  tbody.innerHTML = pagina.contenido.length ? pagina.contenido.map(a => `
+    <tr>
+      <td>${esc(formatearFechaHora(a.fechaHora))}</td>
+      <td>${esc(a.usuario)}</td>
+      <td><span class="badge ${CLASES_OPERACION[a.operacion] || ""}">${esc(a.operacion)}</span></td>
+      <td>${esc(a.entidad)}</td>
+      <td>${esc(a.registroId ?? "—")}</td>
+      <td>${esc(a.detalle ?? "")}</td>
+    </tr>
+  `).join("") : `<tr class="empty-row"><td colspan="6">Sin registros de auditoría</td></tr>`;
+
+  const totalPaginas = Math.max(pagina.totalPaginas, 1);
+  document.getElementById("aud-info").textContent =
+    `Página ${pagina.pagina + 1} de ${totalPaginas} · ${pagina.total} registro${pagina.total === 1 ? "" : "s"}`;
+  document.getElementById("aud-anterior").disabled = pagina.pagina <= 0;
+  document.getElementById("aud-siguiente").disabled = pagina.pagina + 1 >= totalPaginas;
+}
+
+document.getElementById("btn-aud-filtrar").addEventListener("click", () => {
+  paginaAuditoria = 0;
+  cargarAuditoria();
+});
+
+document.getElementById("btn-aud-limpiar").addEventListener("click", () => {
+  ["aud-entidad", "aud-operacion", "aud-usuario", "aud-desde", "aud-hasta"]
+    .forEach(id => { document.getElementById(id).value = ""; });
+  paginaAuditoria = 0;
+  cargarAuditoria();
+});
+
+document.getElementById("aud-anterior").addEventListener("click", () => {
+  if (paginaAuditoria > 0) { paginaAuditoria--; cargarAuditoria(); }
+});
+
+document.getElementById("aud-siguiente").addEventListener("click", () => {
+  paginaAuditoria++;
+  cargarAuditoria();
+});
+
+// Se recarga cada vez que se abre la pestaña, para ver las operaciones recién hechas
+document.querySelector('.tab-btn[data-tab="auditoria"]').addEventListener("click", cargarAuditoria);
 
 // ---------- init ----------
 (async function init() {
