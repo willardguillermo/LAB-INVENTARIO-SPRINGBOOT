@@ -41,6 +41,7 @@ Producto tiene `@ManyToOne` con Categoria y UnidadMedida (obligatorias) y Provee
      `entity/Auditoria`, `repository/AuditoriaRepository`, `service/AuditoriaService`,
      `controller/AuditoriaController` y sus pruebas en `src/test/`.
    - `pom.xml`, solo para agregar `spring-boot-starter-aspectj` y H2 (scope test).
+   - `src/test/resources/application.properties` (H2 para pruebas).
    - `src/main/resources/datos-demo.sql` (datos de demo, no se ejecuta automáticamente).
    - En `src/main/resources/static/index.html`: la sección de productos y la pestaña de Auditoría.
 
@@ -49,8 +50,8 @@ Producto tiene `@ManyToOne` con Categoria y UnidadMedida (obligatorias) y Provee
 2. Los commits NO deben llevar "Co-Authored-By: Claude" ni "Generated with Claude Code".
    Mensajes de commit en español, en imperativo (ej. "Agrega endpoint para desactivar productos").
 3. No hacer push sin que el usuario lo pida.
-4. No modificar `application.properties` (los compañeros usan otra configuración: puerto 3307).
-5. No tocar el test `contextLoads` (`LabInventarioSpringbootApplicationTests`).
+4. No modificar `src/main/resources/application.properties` (los compañeros usan otra configuración:
+   puerto 3307). Las pruebas usan su propio `src/test/resources/application.properties` con H2.
 
 ## Cómo ejecutar en esta máquina
 
@@ -62,8 +63,8 @@ mvnw.cmd spring-boot:run "-Dspring-boot.run.arguments=--spring.datasource.url=jd
 ```
 
 - Compilar: `mvnw.cmd compile`
-- Pruebas de Producto (no requieren MySQL): `mvnw.cmd test -Dtest=ProductoServiceTest`
-- `mvnw.cmd test` completo falla en esta máquina porque `contextLoads` apunta al puerto 3307.
+- Todas las pruebas (usan H2 en memoria, no requieren MySQL): `mvnw.cmd test`
+- Solo las de Producto: `mvnw.cmd test -Dtest=ProductoServiceTest`
 
 ### Datos de demo
 
@@ -100,8 +101,8 @@ Un commit por paso. Estado al último commit de esta rama:
 | — | Plan en CLAUDE.md | ✅ | `6533448` |
 | — | Datos de demo (`datos-demo.sql`) | ✅ | `17b7f34` |
 | — | Columna Acciones fija (sticky) en la tabla de productos | ✅ | `8bd61c0` |
-| 7 | `ProductoServiceTest` con Mockito (26 pruebas) | ✅ | (este commit) |
-| 8 | H2 para pruebas, `contextLoads` sin MySQL; commit "Configura H2 para pruebas sin depender de MySQL" | pendiente | |
+| 7 | `ProductoServiceTest` con Mockito (26 pruebas) | ✅ | `079fed3` |
+| 8 | H2 para pruebas, `contextLoads` sin MySQL | ✅ | (este commit) |
 | 9 | P2-B: `spring-boot-starter-aspectj`, entidad `Auditoria`, `@Auditable`, aspecto, evento AFTER_COMMIT guardado con REQUIRES_NEW, `UsuarioActualProvider` ("sistema" + TODO), anotar `ProductoService`, pendientes del equipo | pendiente | |
 | 10 | P2-C: `GET /api/auditoria` con filtros (entidad, operación, usuario, rango de fechas), más reciente primero, paginado (50 por defecto) con DTO propio (no serializar `Page`) | pendiente | |
 | 11 | P2-D: pestaña Auditoría en `index.html` (glassmorphism, sin XSS) | pendiente | |
@@ -128,6 +129,9 @@ Decisiones ya tomadas (no volver a preguntar):
 - `Categoria` y `UnidadMedida` no tienen `@NotBlank` y sus controladores no usan `@Valid`.
 - Inconsistencias: paquetes `model`/`models`/`entity`/`impl` mezclados, tres estilos de Lombok y
   tres convenciones de estado (`Boolean estado`, `Boolean activo`, `String "ACTIVO"`).
-- `contextLoads` necesita MySQL en el puerto 3307.
+- Se agregó H2 (`com.h2database:h2`, scope test) solo para pruebas, con
+  `src/test/resources/application.properties` (H2 en memoria, modo MySQL, `ddl-auto=create-drop`).
+  `contextLoads` y las pruebas de integración ya no necesitan MySQL. No afecta a la app ni a
+  `src/main/resources/application.properties`.
 - El commit `7759922` (ramas `feature/productos` y `feature/integracion`, repo público) expone una
   contraseña de MySQL en `application.properties`.
