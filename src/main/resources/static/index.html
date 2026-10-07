@@ -68,6 +68,18 @@
   }
   header p { margin: 4px 0 0; color: var(--muted-inverse); font-size: 0.85rem; }
 
+  #sesion-bar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 12px;
+    font-size: 0.85rem;
+  }
+  #sesion-bar #sesion-info { color: var(--text-inverse); font-weight: 600; }
+  #sesion-bar a { color: var(--muted-inverse); text-decoration: none; }
+  #sesion-bar a:hover { color: var(--text-inverse); text-decoration: underline; }
+  #sesion-bar button { padding: 6px 14px; font-size: 0.78rem; }
+
   nav {
     display: flex;
     gap: 6px;
@@ -261,6 +273,34 @@
   .actions-cell button { font-size: 0.75rem; padding: 5px 10px; }
   .empty-row td { text-align: center; color: var(--muted); padding: 22px; }
 
+  /* Tabla de productos: columna Acciones fija a la derecha durante el scroll horizontal */
+  #productos .col-acciones {
+    position: sticky;
+    right: 0;
+    z-index: 1;
+    background: rgba(241, 245, 249, 0.82);
+    backdrop-filter: blur(14px) saturate(160%);
+    -webkit-backdrop-filter: blur(14px) saturate(160%);
+    box-shadow: -10px 0 14px -10px rgba(15, 23, 42, 0.45);
+  }
+  #productos th.col-acciones { background: rgba(248, 250, 252, 0.9); }
+  #productos tr:hover td.col-acciones {
+    background: linear-gradient(rgba(37, 99, 235, 0.06), rgba(37, 99, 235, 0.06)), rgba(241, 245, 249, 0.82);
+  }
+
+  /* Pestaña Auditoría */
+  #auditoria .badge.op-registrar { background: rgba(37, 99, 235, 0.12); color: var(--primary-dark); border-color: rgba(37, 99, 235, 0.25); }
+  #auditoria .badge.op-modificar { background: rgba(217, 119, 6, 0.12); color: #b45309; border-color: rgba(217, 119, 6, 0.25); }
+  #auditoria .aud-fecha {
+    display: flex; align-items: center; gap: 6px; margin: 0;
+    font-size: 0.78rem; color: var(--muted);
+  }
+  #auditoria .aud-paginacion {
+    display: flex; align-items: center; justify-content: flex-end; gap: 12px;
+    margin-top: 14px; font-size: 0.82rem; color: var(--muted);
+  }
+  #auditoria .aud-paginacion button:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
   ::-webkit-scrollbar { height: 8px; width: 8px; }
   ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.25); border-radius: 999px; }
 </style>
@@ -269,7 +309,15 @@
 
 <header>
   <h1>Inventario y Almacén Hospitalario</h1>
-  <p>Panel de prueba para las APIs REST (Productos · Categorías · Unidades de Medida · Proveedores)</p>
+  <p>Panel de prueba para las APIs REST (Productos · Categorías · Unidades de Medida · Proveedores · Auditoría)</p>
+  <div id="sesion-bar">
+    <span id="sesion-info"></span>
+    <a id="link-usuarios" class="solo-admin" href="/usuarios" style="display:none">Usuarios</a>
+    <a id="link-roles" class="solo-admin" href="/roles" style="display:none">Roles</a>
+    <form method="post" action="/logout" style="display:inline">
+      <button type="submit" class="action secondary" id="btn-logout">Cerrar sesión</button>
+    </form>
+  </div>
 </header>
 
 <nav>
@@ -277,51 +325,52 @@
   <button class="tab-btn" data-tab="categorias">Categorías</button>
   <button class="tab-btn" data-tab="unidades">Unidades de Medida</button>
   <button class="tab-btn" data-tab="proveedores">Proveedores</button>
+  <button class="tab-btn solo-admin" data-tab="auditoria" style="display:none">Auditoría</button>
 </nav>
 
 <main>
 
   <!-- ================= PRODUCTOS ================= -->
   <section id="productos" class="tab active">
-    <div class="card">
+    <div class="card solo-admin" id="card-form-producto" style="display:none">
       <h2 id="producto-form-title">Registrar producto</h2>
       <form class="grid" id="form-producto">
         <input type="hidden" id="producto-id">
         <div>
           <label>Nombre *</label>
-          <input type="text" id="producto-nombre" required>
+          <input type="text" id="producto-nombre" required maxlength="150">
         </div>
         <div>
           <label>Tipo de producto *</label>
-          <input type="text" id="producto-tipo" required>
+          <input type="text" id="producto-tipo" required maxlength="100">
         </div>
         <div>
           <label>Descripción</label>
-          <input type="text" id="producto-descripcion">
+          <input type="text" id="producto-descripcion" maxlength="500">
         </div>
         <div>
           <label>Marca</label>
-          <input type="text" id="producto-marca">
+          <input type="text" id="producto-marca" maxlength="100">
         </div>
         <div>
           <label>Fabricante</label>
-          <input type="text" id="producto-fabricante">
+          <input type="text" id="producto-fabricante" maxlength="150">
         </div>
         <div>
           <label>Código</label>
-          <input type="text" id="producto-codigo">
+          <input type="text" id="producto-codigo" maxlength="50">
         </div>
         <div>
           <label>Código de barras</label>
-          <input type="text" id="producto-codigoBarras">
+          <input type="text" id="producto-codigoBarras" maxlength="100">
         </div>
         <div>
-          <label>Categoría</label>
-          <select id="producto-categoria"><option value="">— Sin categoría —</option></select>
+          <label>Categoría *</label>
+          <select id="producto-categoria" required><option value="">— Selecciona —</option></select>
         </div>
         <div>
-          <label>Unidad de medida</label>
-          <select id="producto-unidad"><option value="">— Sin unidad —</option></select>
+          <label>Unidad de medida *</label>
+          <select id="producto-unidad" required><option value="">— Selecciona —</option></select>
         </div>
         <div>
           <label>Proveedor</label>
@@ -347,10 +396,6 @@
           <input type="checkbox" id="producto-manejaVencimiento">
           <label style="margin:0">Maneja vencimiento</label>
         </div>
-        <div class="checkbox-field">
-          <input type="checkbox" id="producto-activo" checked>
-          <label style="margin:0">Activo</label>
-        </div>
         <div style="display:flex; gap:8px;">
           <button type="submit" class="action" id="producto-submit-btn">Guardar</button>
           <button type="button" class="action secondary" id="producto-cancel-btn" style="display:none">Cancelar</button>
@@ -368,6 +413,8 @@
           <option value="true">Activos</option>
           <option value="false">Inactivos</option>
         </select>
+        <select id="filtro-categoria"><option value="">Todas las categorías</option></select>
+        <select id="filtro-proveedor"><option value="">Todos los proveedores</option></select>
         <button class="action" id="btn-filtrar">Buscar</button>
         <button class="action secondary" id="btn-limpiar-filtro">Limpiar</button>
       </div>
@@ -376,7 +423,7 @@
           <thead>
             <tr>
               <th>ID</th><th>Nombre</th><th>Tipo</th><th>Categoría</th><th>Unidad</th><th>Proveedor</th>
-              <th>Stock (min/max/rep)</th><th>Lote</th><th>Venc.</th><th>Estado</th><th>Acciones</th>
+              <th>Stock (min/max/rep)</th><th>Lote</th><th>Venc.</th><th>Estado</th><th class="col-acciones">Acciones</th>
             </tr>
           </thead>
           <tbody id="productos-tbody"></tbody>
@@ -387,7 +434,7 @@
 
   <!-- ================= CATEGORIAS ================= -->
   <section id="categorias" class="tab">
-    <div class="card">
+    <div class="card solo-admin" id="card-form-categoria" style="display:none">
       <h2 id="categoria-form-title">Registrar categoría</h2>
       <form class="grid" id="form-categoria">
         <input type="hidden" id="categoria-id">
@@ -420,7 +467,7 @@
 
   <!-- ================= UNIDADES ================= -->
   <section id="unidades" class="tab">
-    <div class="card">
+    <div class="card solo-admin" id="card-form-unidad" style="display:none">
       <h2>Registrar unidad de medida</h2>
       <form class="grid" id="form-unidad">
         <div>
@@ -450,7 +497,7 @@
 
   <!-- ================= PROVEEDORES ================= -->
   <section id="proveedores" class="tab">
-    <div class="card">
+    <div class="card solo-admin" id="card-form-proveedor" style="display:none">
       <h2 id="proveedor-form-title">Registrar proveedor</h2>
       <form class="grid" id="form-proveedor">
         <input type="hidden" id="proveedor-id">
@@ -500,6 +547,48 @@
     </div>
   </section>
 
+  <!-- ================= AUDITORIA ================= -->
+  <section id="auditoria" class="tab">
+    <div class="card">
+      <h2>Bitácora de auditoría</h2>
+      <div class="filters">
+        <select id="aud-entidad">
+          <option value="">Todas las entidades</option>
+          <option value="Producto">Producto</option>
+          <option value="Categoria">Categoría</option>
+          <option value="UnidadMedida">Unidad de medida</option>
+          <option value="Proveedor">Proveedor</option>
+          <option value="Usuario">Usuario</option>
+        </select>
+        <select id="aud-operacion">
+          <option value="">Todas las operaciones</option>
+          <option value="REGISTRAR">Registrar</option>
+          <option value="MODIFICAR">Modificar</option>
+          <option value="ACTIVAR">Activar</option>
+          <option value="DESACTIVAR">Desactivar</option>
+        </select>
+        <input type="text" id="aud-usuario" placeholder="Usuario..." maxlength="100">
+        <label class="aud-fecha">Desde <input type="date" id="aud-desde"></label>
+        <label class="aud-fecha">Hasta <input type="date" id="aud-hasta"></label>
+        <button class="action" id="btn-aud-filtrar">Buscar</button>
+        <button class="action secondary" id="btn-aud-limpiar">Limpiar</button>
+      </div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr><th>Fecha y hora</th><th>Usuario</th><th>Operación</th><th>Entidad</th><th>ID registro</th><th>Detalle</th></tr>
+          </thead>
+          <tbody id="auditoria-tbody"></tbody>
+        </table>
+      </div>
+      <div class="aud-paginacion">
+        <button class="action secondary" id="aud-anterior">&larr; Anterior</button>
+        <span id="aud-info"></span>
+        <button class="action secondary" id="aud-siguiente">Siguiente &rarr;</button>
+      </div>
+    </div>
+  </section>
+
 </main>
 
 <div id="toast"></div>
@@ -518,12 +607,18 @@ function toast(msg, type) {
 
 async function apiFetch(path, options) {
   const res = await fetch(API + path, options);
+  if (res.status === 401) {
+    window.location.href = "/login";
+    throw new Error("No autenticado");
+  }
   let body = null;
   const text = await res.text();
   try { body = text ? JSON.parse(text) : null; } catch (e) { body = text; }
   if (!res.ok) {
     const msg = (body && (body.message || body.error)) || `Error HTTP ${res.status}`;
-    throw new Error(msg);
+    const err = new Error(msg);
+    err.errores = body && body.errores;   // detalle por campo de los errores de validación
+    throw err;
   }
   return body;
 }
@@ -548,32 +643,67 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
 // ======================================================
 // PRODUCTOS
 // ======================================================
+// Productos del último listado, por id: los botones de la tabla solo llevan data-id
+// (nunca el objeto serializado en un onclick, que permitía inyectar JavaScript).
+const productosPorId = new Map();
+
+function opcionesHtml(lista, textoDe) {
+  return lista.map(x => `<option value="${Number(x.id)}">${esc(textoDe(x))}</option>`).join("");
+}
+
 async function cargarSelectsProducto() {
   const [categorias, unidades, proveedores] = await Promise.all([
     apiFetch("/categorias").catch(() => []),
     apiFetch("/unidades-medida").catch(() => []),
     apiFetch("/proveedores").catch(() => [])
   ]);
-  const selCat = document.getElementById("producto-categoria");
-  const selUni = document.getElementById("producto-unidad");
-  const selProv = document.getElementById("producto-proveedor");
-  selCat.innerHTML = '<option value="">— Sin categoría —</option>' +
-    categorias.map(c => `<option value="${c.id}">${esc(c.nombre)}</option>`).join("");
-  selUni.innerHTML = '<option value="">— Sin unidad —</option>' +
-    unidades.map(u => `<option value="${u.id}">${esc(u.nombre)} (${esc(u.abreviatura)})</option>`).join("");
-  selProv.innerHTML = '<option value="">— Sin proveedor —</option>' +
-    proveedores.map(p => `<option value="${p.id}">${esc(p.razonSocial)}</option>`).join("");
+  const textoUnidad = u => `${u.nombre} (${u.abreviatura})`;
+
+  // Formulario: solo relaciones activas (la API rechaza asignar inactivas)
+  document.getElementById("producto-categoria").innerHTML = '<option value="">— Selecciona —</option>' +
+    opcionesHtml(categorias.filter(c => c.estado), c => c.nombre);
+  document.getElementById("producto-unidad").innerHTML = '<option value="">— Selecciona —</option>' +
+    opcionesHtml(unidades.filter(u => u.estado), textoUnidad);
+  document.getElementById("producto-proveedor").innerHTML = '<option value="">— Sin proveedor —</option>' +
+    opcionesHtml(proveedores.filter(p => p.estado === "ACTIVO"), p => p.razonSocial);
+
+  // Filtros: todas, porque puede haber productos asociados a relaciones ya inactivas
+  const filtroCat = document.getElementById("filtro-categoria");
+  const filtroProv = document.getElementById("filtro-proveedor");
+  const catElegida = filtroCat.value, provElegido = filtroProv.value;
+  filtroCat.innerHTML = '<option value="">Todas las categorías</option>' + opcionesHtml(categorias, c => c.nombre);
+  filtroProv.innerHTML = '<option value="">Todos los proveedores</option>' + opcionesHtml(proveedores, p => p.razonSocial);
+  filtroCat.value = catElegida;
+  filtroProv.value = provElegido;
+}
+
+// Al editar, la relación actual puede estar inactiva y no figurar en el select:
+// se agrega como opción temporal para no cambiarla sin querer.
+function seleccionarRelacion(selectId, relacion, texto) {
+  const sel = document.getElementById(selectId);
+  sel.querySelectorAll("option[data-temporal]").forEach(o => o.remove());
+  if (!relacion) { sel.value = ""; return; }
+  const id = String(relacion.id);
+  if (![...sel.options].some(o => o.value === id)) {
+    const opt = document.createElement("option");
+    opt.value = id;
+    opt.textContent = `${texto} (inactivo)`;
+    opt.dataset.temporal = "true";
+    sel.appendChild(opt);
+  }
+  sel.value = id;
 }
 
 function limpiarFormProducto() {
   document.getElementById("form-producto").reset();
   document.getElementById("producto-id").value = "";
-  document.getElementById("producto-activo").checked = true;
+  document.querySelectorAll("#form-producto option[data-temporal]").forEach(o => o.remove());
   document.getElementById("producto-form-title").textContent = "Registrar producto";
   document.getElementById("producto-submit-btn").textContent = "Guardar";
   document.getElementById("producto-cancel-btn").style.display = "none";
 }
 
+// "activo" no se envía: al registrar siempre es true y el PUT lo ignora (usar Activar/Desactivar)
 function productoDesdeForm() {
   const catId = document.getElementById("producto-categoria").value;
   const uniId = document.getElementById("producto-unidad").value;
@@ -591,7 +721,6 @@ function productoDesdeForm() {
     puntoReposicion: numOrNull("producto-puntoReposicion"),
     manejaLote: document.getElementById("producto-manejaLote").checked,
     manejaVencimiento: document.getElementById("producto-manejaVencimiento").checked,
-    activo: document.getElementById("producto-activo").checked,
     categoria: catId ? { id: Number(catId) } : null,
     unidadMedida: uniId ? { id: Number(uniId) } : null,
     proveedor: provId ? { id: Number(provId) } : null
@@ -601,6 +730,11 @@ function productoDesdeForm() {
 function numOrNull(id) {
   const v = document.getElementById(id).value;
   return v === "" ? null : Number(v);
+}
+
+// Incluye el detalle por campo que devuelve la API en los errores de validación
+function mensajeErrorProducto(err) {
+  return err.errores ? `${err.message}: ${Object.values(err.errores).join("; ")}` : err.message;
 }
 
 document.getElementById("form-producto").addEventListener("submit", async (e) => {
@@ -626,7 +760,7 @@ document.getElementById("form-producto").addEventListener("submit", async (e) =>
     limpiarFormProducto();
     cargarProductos();
   } catch (err) {
-    toast(err.message, "error");
+    toast(mensajeErrorProducto(err), "error");
   }
 });
 
@@ -641,82 +775,100 @@ function editarProducto(p) {
   document.getElementById("producto-fabricante").value = p.fabricante || "";
   document.getElementById("producto-codigo").value = p.codigo || "";
   document.getElementById("producto-codigoBarras").value = p.codigoBarras || "";
-  document.getElementById("producto-categoria").value = p.categoria ? p.categoria.id : "";
-  document.getElementById("producto-unidad").value = p.unidadMedida ? p.unidadMedida.id : "";
-  document.getElementById("producto-proveedor").value = p.proveedor ? p.proveedor.id : "";
+  seleccionarRelacion("producto-categoria", p.categoria, p.categoria && p.categoria.nombre);
+  seleccionarRelacion("producto-unidad", p.unidadMedida, p.unidadMedida && p.unidadMedida.nombre);
+  seleccionarRelacion("producto-proveedor", p.proveedor, p.proveedor && p.proveedor.razonSocial);
   document.getElementById("producto-stockMinimo").value = p.stockMinimo ?? "";
   document.getElementById("producto-stockMaximo").value = p.stockMaximo ?? "";
   document.getElementById("producto-puntoReposicion").value = p.puntoReposicion ?? "";
   document.getElementById("producto-manejaLote").checked = !!p.manejaLote;
   document.getElementById("producto-manejaVencimiento").checked = !!p.manejaVencimiento;
-  document.getElementById("producto-activo").checked = !!p.activo;
   document.getElementById("producto-form-title").textContent = `Editando producto #${p.id}`;
   document.getElementById("producto-submit-btn").textContent = "Actualizar";
   document.getElementById("producto-cancel-btn").style.display = "inline-block";
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
+// RF-INV-03
+async function cambiarEstadoProducto(id, accion) {
+  try {
+    const p = await apiFetch(`/productos/${id}/${accion}`, { method: "PATCH" });
+    toast(`Producto "${p.nombre}" ${accion === "activar" ? "activado" : "desactivado"}`, "success");
+    cargarProductos();
+  } catch (err) {
+    toast(mensajeErrorProducto(err), "error");
+  }
+}
+
 function renderProductos(lista) {
   const tbody = document.getElementById("productos-tbody");
+  productosPorId.clear();
+  lista.forEach(p => productosPorId.set(String(p.id), p));
   if (!lista.length) {
-    tbody.innerHTML = `<tr class="empty-row"><td colspan="11">Sin productos registrados</td></tr>`;
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="11">Sin productos que mostrar</td></tr>`;
     return;
   }
   tbody.innerHTML = lista.map(p => `
     <tr>
-      <td>${p.id}</td>
+      <td>${Number(p.id)}</td>
       <td>${esc(p.nombre)}</td>
       <td>${esc(p.tipoProducto)}</td>
       <td>${p.categoria ? esc(p.categoria.nombre) : "—"}</td>
       <td>${p.unidadMedida ? esc(p.unidadMedida.abreviatura) : "—"}</td>
       <td>${p.proveedor ? esc(p.proveedor.razonSocial) : "—"}</td>
-      <td>${p.stockMinimo ?? "-"} / ${p.stockMaximo ?? "-"} / ${p.puntoReposicion ?? "-"}</td>
+      <td>${esc(p.stockMinimo ?? "-")} / ${esc(p.stockMaximo ?? "-")} / ${esc(p.puntoReposicion ?? "-")}</td>
       <td>${p.manejaLote ? "Sí" : "No"}</td>
       <td>${p.manejaVencimiento ? "Sí" : "No"}</td>
       <td><span class="badge ${p.activo ? "on" : "off"}">${p.activo ? "Activo" : "Inactivo"}</span></td>
-      <td class="actions-cell">
-        <button class="action secondary" onclick='editarProducto(${JSON.stringify(p).replace(/'/g, "&#39;")})'>Editar</button>
-      </td>
+      <td class="col-acciones"><div class="actions-cell">
+        ${esAdmin() ? `
+        <button class="action secondary" data-accion="editar" data-id="${Number(p.id)}">Editar</button>
+        ${p.activo
+          ? `<button class="action danger" data-accion="desactivar" data-id="${Number(p.id)}">Desactivar</button>`
+          : `<button class="action" data-accion="activar" data-id="${Number(p.id)}">Activar</button>`}
+        ` : "—"}
+      </div></td>
     </tr>
   `).join("");
 }
 
-async function cargarProductos() {
-  try {
-    const data = await apiFetch("/productos");
-    renderProductos(data);
-  } catch (err) {
-    toast(err.message, "error");
-  }
-}
-
-document.getElementById("btn-filtrar").addEventListener("click", async () => {
-  const nombre = document.getElementById("filtro-nombre").value.trim();
-  const tipo = document.getElementById("filtro-tipo").value.trim();
-  const estado = document.getElementById("filtro-estado").value;
-  try {
-    let data;
-    if (nombre && tipo) {
-      data = await apiFetch(`/productos/filtrar?nombre=${encodeURIComponent(nombre)}&tipoProducto=${encodeURIComponent(tipo)}`);
-    } else if (nombre) {
-      data = await apiFetch(`/productos/buscar?nombre=${encodeURIComponent(nombre)}`);
-    } else if (tipo) {
-      data = await apiFetch(`/productos/filtrar/tipo?tipoProducto=${encodeURIComponent(tipo)}`);
-    } else if (estado) {
-      data = await apiFetch(`/productos/filtrar/estado?activo=${estado}`);
-    } else {
-      data = await apiFetch("/productos");
-    }
-    renderProductos(data);
-  } catch (err) {
-    toast(err.message, "error");
+document.getElementById("productos-tbody").addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-accion]");
+  if (!btn) return;
+  const id = btn.dataset.id;
+  if (btn.dataset.accion === "editar") {
+    const p = productosPorId.get(id);
+    if (p) editarProducto(p);
+  } else {
+    cambiarEstadoProducto(id, btn.dataset.accion);
   }
 });
 
+// RF-INV-14: todos los filtros se combinan en una sola consulta.
+// Se usa también para recargar la tabla respetando los filtros elegidos.
+async function cargarProductos() {
+  const filtros = {
+    nombre: document.getElementById("filtro-nombre").value.trim(),
+    tipo: document.getElementById("filtro-tipo").value.trim(),
+    activo: document.getElementById("filtro-estado").value,
+    categoriaId: document.getElementById("filtro-categoria").value,
+    proveedorId: document.getElementById("filtro-proveedor").value
+  };
+  const params = new URLSearchParams();
+  Object.entries(filtros).forEach(([k, v]) => { if (v) params.append(k, v); });
+  const query = params.toString();
+  try {
+    renderProductos(await apiFetch("/productos" + (query ? "?" + query : "")));
+  } catch (err) {
+    toast(mensajeErrorProducto(err), "error");
+  }
+}
+
+document.getElementById("btn-filtrar").addEventListener("click", cargarProductos);
+
 document.getElementById("btn-limpiar-filtro").addEventListener("click", () => {
-  document.getElementById("filtro-nombre").value = "";
-  document.getElementById("filtro-tipo").value = "";
-  document.getElementById("filtro-estado").value = "";
+  ["filtro-nombre", "filtro-tipo", "filtro-estado", "filtro-categoria", "filtro-proveedor"]
+    .forEach(id => { document.getElementById(id).value = ""; });
   cargarProductos();
 });
 
@@ -784,7 +936,7 @@ async function cargarCategorias() {
         <td>${esc(c.nombre)}</td>
         <td>${esc(c.descripcion)}</td>
         <td><span class="badge ${c.estado ? "on" : "off"}">${c.estado ? "Activa" : "Inactiva"}</span></td>
-        <td><button class="action secondary" onclick='editarCategoria(${JSON.stringify(c)})'>Editar</button></td>
+        <td>${esAdmin() ? `<button class="action secondary" onclick='editarCategoria(${JSON.stringify(c)})'>Editar</button>` : "—"}</td>
       </tr>
     `).join("") : `<tr class="empty-row"><td colspan="5">Sin categorías registradas</td></tr>`;
   } catch (err) {
@@ -906,7 +1058,7 @@ async function cargarProveedores() {
         <td>${esc(p.contacto)}</td>
         <td>${esc(p.telefono)}</td>
         <td><span class="badge ${p.estado === "ACTIVO" ? "on" : "off"}">${esc(p.estado)}</span></td>
-        <td><button class="action secondary" onclick='editarProveedor(${JSON.stringify(p)})'>Editar</button></td>
+        <td>${esAdmin() ? `<button class="action secondary" onclick='editarProveedor(${JSON.stringify(p)})'>Editar</button>` : "—"}</td>
       </tr>
     `).join("") : `<tr class="empty-row"><td colspan="7">Sin proveedores registrados</td></tr>`;
   } catch (err) {
@@ -914,8 +1066,113 @@ async function cargarProveedores() {
   }
 }
 
+// ======================================================
+// AUDITORÍA (P2) - solo lectura
+// ======================================================
+let paginaAuditoria = 0;
+
+// "2026-10-06T22:03:47" -> "06/10/2026 22:03:47" (sin pasar por Date para no mover la zona horaria)
+function formatearFechaHora(valor) {
+  if (!valor) return "";
+  const [fecha, hora = ""] = String(valor).split("T");
+  const [a, m, d] = fecha.split("-");
+  return `${d}/${m}/${a} ${hora.substring(0, 8)}`;
+}
+
+const CLASES_OPERACION = {
+  REGISTRAR: "op-registrar",
+  MODIFICAR: "op-modificar",
+  ACTIVAR: "on",
+  DESACTIVAR: "off"
+};
+
+async function cargarAuditoria() {
+  const filtros = {
+    entidad: document.getElementById("aud-entidad").value,
+    operacion: document.getElementById("aud-operacion").value,
+    usuario: document.getElementById("aud-usuario").value.trim(),
+    desde: document.getElementById("aud-desde").value,
+    hasta: document.getElementById("aud-hasta").value
+  };
+  const params = new URLSearchParams();
+  Object.entries(filtros).forEach(([k, v]) => { if (v) params.append(k, v); });
+  params.append("pagina", paginaAuditoria);
+
+  try {
+    renderAuditoria(await apiFetch("/auditoria?" + params.toString()));
+  } catch (err) {
+    toast(err.message, "error");
+  }
+}
+
+function renderAuditoria(pagina) {
+  const tbody = document.getElementById("auditoria-tbody");
+  tbody.innerHTML = pagina.contenido.length ? pagina.contenido.map(a => `
+    <tr>
+      <td>${esc(formatearFechaHora(a.fechaHora))}</td>
+      <td>${esc(a.usuario)}</td>
+      <td><span class="badge ${CLASES_OPERACION[a.operacion] || ""}">${esc(a.operacion)}</span></td>
+      <td>${esc(a.entidad)}</td>
+      <td>${esc(a.registroId ?? "—")}</td>
+      <td>${esc(a.detalle ?? "")}</td>
+    </tr>
+  `).join("") : `<tr class="empty-row"><td colspan="6">Sin registros de auditoría</td></tr>`;
+
+  const totalPaginas = Math.max(pagina.totalPaginas, 1);
+  document.getElementById("aud-info").textContent =
+    `Página ${pagina.pagina + 1} de ${totalPaginas} · ${pagina.total} registro${pagina.total === 1 ? "" : "s"}`;
+  document.getElementById("aud-anterior").disabled = pagina.pagina <= 0;
+  document.getElementById("aud-siguiente").disabled = pagina.pagina + 1 >= totalPaginas;
+}
+
+document.getElementById("btn-aud-filtrar").addEventListener("click", () => {
+  paginaAuditoria = 0;
+  cargarAuditoria();
+});
+
+document.getElementById("btn-aud-limpiar").addEventListener("click", () => {
+  ["aud-entidad", "aud-operacion", "aud-usuario", "aud-desde", "aud-hasta"]
+    .forEach(id => { document.getElementById(id).value = ""; });
+  paginaAuditoria = 0;
+  cargarAuditoria();
+});
+
+document.getElementById("aud-anterior").addEventListener("click", () => {
+  if (paginaAuditoria > 0) { paginaAuditoria--; cargarAuditoria(); }
+});
+
+document.getElementById("aud-siguiente").addEventListener("click", () => {
+  paginaAuditoria++;
+  cargarAuditoria();
+});
+
+// Se recarga cada vez que se abre la pestaña, para ver las operaciones recién hechas
+document.querySelector('.tab-btn[data-tab="auditoria"]').addEventListener("click", cargarAuditoria);
+
+// ======================================================
+// SESION Y PERMISOS
+// ======================================================
+let rolActual = null;
+
+function esAdmin() {
+  return rolActual === "ADMINISTRADOR";
+}
+
+async function cargarSesion() {
+  const sesion = await apiFetch("/sesion");
+  rolActual = sesion.rol;
+  document.getElementById("sesion-info").textContent =
+    `${sesion.nombre} (${sesion.username}) · ${sesion.rol}`;
+
+  const admin = esAdmin();
+  document.querySelectorAll(".solo-admin").forEach(el => {
+    el.style.display = admin ? "" : "none";
+  });
+}
+
 // ---------- init ----------
 (async function init() {
+  await cargarSesion();
   await cargarSelectsProducto();
   cargarProductos();
   cargarCategorias();

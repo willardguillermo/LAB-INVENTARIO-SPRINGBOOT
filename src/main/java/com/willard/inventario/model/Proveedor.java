@@ -1,9 +1,16 @@
 package com.willard.inventario.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.willard.inventario.entity.ProductoEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "proveedor")
@@ -33,4 +40,10 @@ public class Proveedor {
 
     @Column(nullable = false, length = 20)
     private String estado = "ACTIVO";
+
+    @OneToMany(mappedBy = "proveedor", fetch = FetchType.LAZY)
+    @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private List<ProductoEntity> productos = new ArrayList<>();
 }

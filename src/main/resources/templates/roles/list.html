@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roles</title>
+    <th:block th:replace="~{fragments/layout :: estilos}"></th:block>
+</head>
+<body>
+
+<th:block th:replace="~{fragments/layout :: barra('roles')}"></th:block>
+
+<main>
+    <div class="card">
+        <h2>Roles</h2>
+
+        <div th:if="${error}" class="alerta error" th:text="${error}"></div>
+
+        <a sec:authorize="hasRole('ADMINISTRADOR')" th:href="@{/roles/nuevo}" class="action" style="margin-bottom:16px; display:inline-block;">Nuevo rol</a>
+
+        <div style="overflow-x:auto">
+            <table>
+                <thead>
+                <tr><th>Nombre</th><th>Estado</th><th>Acciones</th></tr>
+                </thead>
+                <tbody>
+                <tr th:if="${#lists.isEmpty(roles)}">
+                    <td colspan="3" style="text-align:center; color: var(--muted);">Sin roles registrados</td>
+                </tr>
+                <tr th:each="rol : ${roles}">
+                    <td th:text="${rol.nombre}"></td>
+                    <td><span class="badge" th:classappend="${rol.estado} ? 'on' : 'off'" th:text="${rol.estado} ? 'Activo' : 'Inactivo'"></span></td>
+                    <td>
+                        <div class="actions-cell">
+                            <a th:href="@{/roles/editar/{id}(id=${rol.id})}" class="action secondary">Editar</a>
+                            <form th:action="@{/roles/estado/{id}(id=${rol.id})}" method="post" style="display:inline">
+                                <button type="submit" class="action danger">Activar/Desactivar</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+
+</body>
+</html>

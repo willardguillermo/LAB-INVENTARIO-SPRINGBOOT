@@ -2,6 +2,7 @@ package com.willard.inventario.controller;
 
 import com.willard.inventario.models.UnidadMedida;
 import com.willard.inventario.service.UnidadMedidaService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -29,7 +30,7 @@ public class UnidadMedidaController {
     }
 
     @PostMapping
-    public ResponseEntity<UnidadMedida> registrar(@RequestBody UnidadMedida unidadMedida) {
+    public ResponseEntity<UnidadMedida> registrar(@Valid @RequestBody UnidadMedida unidadMedida) {
         return new ResponseEntity<>(unidadMedidaService.registrar(unidadMedida), HttpStatus.CREATED);
     }
 }

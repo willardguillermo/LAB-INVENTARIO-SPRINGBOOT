@@ -1,9 +1,11 @@
 package com.willard.inventario.service;
 
-import org.springframework.stereotype.Service;
+import com.willard.inventario.aop.Auditable;
 import com.willard.inventario.models.UnidadMedida;
 import com.willard.inventario.repository.UnidadMedidaRepository;
 import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
@@ -27,8 +29,13 @@ public class UnidadMedidaService {
     }
 
     // RF-INV-17: Registrar unidades de medida
+    @Transactional
+    @Auditable(entidad = "UnidadMedida", operacion = "REGISTRAR")
     public UnidadMedida registrar(UnidadMedida unidadMedida) {
         unidadMedida.setId(null);
+        if (unidadMedida.getEstado() == null) {
+            unidadMedida.setEstado(true);
+        }
         return unidadMedidaRepository.save(unidadMedida);
     }
 }

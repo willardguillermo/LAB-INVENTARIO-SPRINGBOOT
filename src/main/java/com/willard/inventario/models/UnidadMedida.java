@@ -1,6 +1,13 @@
 package com.willard.inventario.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.willard.inventario.entity.ProductoEntity;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "unidad_medida")
@@ -10,14 +17,22 @@ public class UnidadMedida {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotBlank(message = "El nombre de la unidad es obligatorio")
+    @Size(max = 50)
     @Column(nullable = false, length = 50)
     private String nombre;
 
+    @NotBlank(message = "La abreviatura es obligatoria")
+    @Size(max = 10)
     @Column(nullable = false, length = 10)
     private String abreviatura;
 
     @Column(nullable = false)
     private Boolean estado = true;
+
+    @OneToMany(mappedBy = "unidadMedida", fetch = FetchType.LAZY)
+    @JsonIgnore
+    private List<ProductoEntity> productos = new ArrayList<>();
 
     public UnidadMedida() {}
 
@@ -32,4 +47,7 @@ public class UnidadMedida {
 
     public Boolean getEstado() { return estado; }
     public void setEstado(Boolean estado) { this.estado = estado; }
+
+    public List<ProductoEntity> getProductos() { return productos; }
+    public void setProductos(List<ProductoEntity> productos) { this.productos = productos; }
 }

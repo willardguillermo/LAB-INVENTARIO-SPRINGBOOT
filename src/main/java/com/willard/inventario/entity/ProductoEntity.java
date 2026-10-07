@@ -8,6 +8,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -24,25 +25,32 @@ public class ProductoEntity {
     private Long id;
 
     @NotBlank(message = "El nombre del producto es obligatorio")
+    @Size(max = 150, message = "El nombre no puede superar los 150 caracteres")
     @Column(nullable = false, length = 150)
     private String nombre;
 
+    @Size(max = 500, message = "La descripción no puede superar los 500 caracteres")
     @Column(length = 500)
     private String descripcion;
 
+    @Size(max = 100, message = "La marca no puede superar los 100 caracteres")
     @Column(length = 100)
     private String marca;
 
+    @Size(max = 150, message = "El fabricante no puede superar los 150 caracteres")
     @Column(length = 150)
     private String fabricante;
 
+    @Size(max = 50, message = "El código no puede superar los 50 caracteres")
     @Column(unique = true, length = 50)
     private String codigo;
 
+    @Size(max = 100, message = "El código de barras no puede superar los 100 caracteres")
     @Column(name = "codigo_barras", length = 100)
     private String codigoBarras;
 
     @NotBlank(message = "El tipo de producto es obligatorio")
+    @Size(max = 100, message = "El tipo de producto no puede superar los 100 caracteres")
     @Column(name = "tipo_producto", nullable = false, length = 100)
     private String tipoProducto;
 
@@ -69,16 +77,19 @@ public class ProductoEntity {
     @NotNull
     private Boolean activo = true;
 
+    @NotNull(message = "La categoría es obligatoria")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "categoria_id")
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Categoria categoria;
 
+    @NotNull(message = "La unidad de medida es obligatoria")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "unidad_medida_id")
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private UnidadMedida unidadMedida;
 
+    // Opcional: un producto puede no tener proveedor asignado
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "proveedor_id")
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})

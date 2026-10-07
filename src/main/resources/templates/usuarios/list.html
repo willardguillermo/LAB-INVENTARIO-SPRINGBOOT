@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Usuarios</title>
+    <th:block th:replace="~{fragments/layout :: estilos}"></th:block>
+</head>
+<body>
+
+<th:block th:replace="~{fragments/layout :: barra('usuarios')}"></th:block>
+
+<main>
+    <div class="card">
+        <h2>Usuarios</h2>
+
+        <div th:if="${error}" class="alerta error" th:text="${error}"></div>
+
+        <a sec:authorize="hasRole('ADMINISTRADOR')" th:href="@{/usuarios/nuevo}" class="action" style="margin-bottom:16px; display:inline-block;">Nuevo usuario</a>
+
+        <div style="overflow-x:auto">
+            <table>
+                <thead>
+                <tr><th>Nombre</th><th>Username</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr>
+                </thead>
+                <tbody>
+                <tr th:if="${#lists.isEmpty(usuarios)}">
+                    <td colspan="5" style="text-align:center; color: var(--muted);">Sin usuarios registrados</td>
+                </tr>
+                <tr th:each="usuario : ${usuarios}">
+                    <td th:text="${usuario.nombre}"></td>
+                    <td th:text="${usuario.username}"></td>
+                    <td th:text="${usuario.rol != null} ? ${usuario.rol.nombre} : '—'"></td>
+                    <td><span class="badge" th:classappend="${usuario.estado} ? 'on' : 'off'" th:text="${usuario.estado} ? 'Activo' : 'Inactivo'"></span></td>
+                    <td>
+                        <div class="actions-cell">
+                            <a th:href="@{/usuarios/editar/{id}(id=${usuario.id})}" class="action secondary">Editar</a>
+                            <form th:action="@{/usuarios/estado/{id}(id=${usuario.id})}" method="post" style="display:inline">
+                                <button type="submit" class="action danger">Activar/Desactivar</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+
+</body>
+</html>
