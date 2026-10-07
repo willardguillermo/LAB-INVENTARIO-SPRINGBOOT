@@ -41,6 +41,7 @@ Producto tiene `@ManyToOne` con Categoria y UnidadMedida (obligatorias) y Provee
      `entity/Auditoria`, `repository/AuditoriaRepository`, `service/AuditoriaService`,
      `controller/AuditoriaController` y sus pruebas en `src/test/`.
    - `pom.xml`, solo para agregar `spring-boot-starter-aspectj` y H2 (scope test).
+   - `src/main/resources/datos-demo.sql` (datos de demo, no se ejecuta automáticamente).
    - En `src/main/resources/static/index.html`: la sección de productos y la pestaña de Auditoría.
 
    No tocar archivos de Categoría, UnidadMedida ni Proveedor sin preguntar antes (tampoco para
@@ -64,6 +65,24 @@ mvnw.cmd spring-boot:run "-Dspring-boot.run.arguments=--spring.datasource.url=jd
 - Pruebas de Producto (no requieren MySQL): `mvnw.cmd test -Dtest=ProductoServiceTest`
 - `mvnw.cmd test` completo falla en esta máquina porque `contextLoads` apunta al puerto 3307.
 
+### Datos de demo
+
+`src/main/resources/datos-demo.sql` (5 categorías, 5 unidades, 3 proveedores ficticios y 15 productos,
+3 de ellos inactivos). No se ejecuta al arrancar. Para cargarlo o recargarlo (la app debe haber
+arrancado antes al menos una vez para que existan las tablas):
+
+```
+C:\xampp\mysql\bin\mysql.exe -uroot -P3306 --default-character-set=utf8mb4 inventario_hospital < src\main\resources\datos-demo.sql
+```
+
+Desde PowerShell, que no admite `<`:
+
+```
+Get-Content -Raw -Encoding UTF8 src\main\resources\datos-demo.sql | C:\xampp\mysql\bin\mysql.exe -uroot -P3306 --default-character-set=utf8mb4 inventario_hospital
+```
+
+Es re-ejecutable: borra solo sus propias filas (por código, RUC o nombre exacto) y las vuelve a insertar.
+
 ## Plan de trabajo (rama `feature/productos-eval02`, sin push)
 
 Un commit por paso. Estado al último commit de esta rama:
@@ -78,8 +97,8 @@ Un commit por paso. Estado al último commit de esta rama:
 | 4 | RF-INV-03: `PATCH /{id}/activar` y `/desactivar` (409 si ya está en ese estado) | ✅ | `0cf786f` |
 | 5 | RF-INV-14: `GET /api/productos` con filtros combinables; LEFT JOIN FETCH | ✅ | `9243447` |
 | 6 | Frontend de productos: filtros, activar/desactivar, XSS, selects solo activos | ✅ | `c0753ff` |
-| — | Plan en CLAUDE.md | ✅ | (este commit) |
-| — | Datos de demo (`datos-demo.sql`) | pendiente | |
+| — | Plan en CLAUDE.md | ✅ | `6533448` |
+| — | Datos de demo (`datos-demo.sql`) | ✅ | (este commit) |
 | — | Columna Acciones fija (sticky) en la tabla de productos | pendiente | |
 | 7 | `ProductoServiceTest` con Mockito | pendiente | |
 | 8 | H2 para pruebas, `contextLoads` sin MySQL; commit "Configura H2 para pruebas sin depender de MySQL" | pendiente | |
