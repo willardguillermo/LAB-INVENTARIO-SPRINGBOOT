@@ -1,6 +1,8 @@
 package com.willard.inventario.impl;
 
+import com.willard.inventario.entity.ProductoEntity;
 import com.willard.inventario.model.Proveedor;
+import com.willard.inventario.repository.ProductoRepository;
 import com.willard.inventario.repository.ProveedorRepository;
 import com.willard.inventario.service.ProveedorService;
 import lombok.RequiredArgsConstructor;
@@ -15,11 +17,10 @@ import java.util.List;
 public class ProveedorServiceImpl implements ProveedorService {
 
     private final ProveedorRepository proveedorRepository;
+    private final ProductoRepository productoRepository;
 
     @Override
     public Proveedor registrar(Proveedor proveedor) {
-        // Se ignora cualquier id enviado por el cliente para evitar
-        // que save() haga un merge y sobrescriba un proveedor existente.
         proveedor.setId(null);
         return proveedorRepository.save(proveedor);
     }
@@ -49,5 +50,30 @@ public class ProveedorServiceImpl implements ProveedorService {
     public Proveedor buscarPorId(Long id) {
         return proveedorRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Proveedor no encontrado con id " + id));
+    }
+
+    @Override
+    public void eliminar(Long id) {
+        Proveedor proveedor = buscarPorId(id);
+        long cantidad = productoRepository.countByProveedorId(id);
+        if (cantidad > 0) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "No se puede eliminar el proveedor: tiene " + cantidad
+                            + " producto(s) asociado(s). Desactívelo en su lugar.");
+        }
+        proveedorRepository.delete(proveedor);
+    }
+
+    @Override
+    public Proveedor cambiarEstado(Long id, String estado) {
+        Proveedor proveedor = buscarPorId(id);
+        proveedor.setEstado(estado);
+        return proveedorRepository.save(proveedor);
+    }
+
+    @Override
+    public List<ProductoEntity> listarProductos(Long id) {
+        buscarPorId(id);
+        return productoRepository.findByProveedorId(id);
     }
 }
