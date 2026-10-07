@@ -1,5 +1,7 @@
 package com.willard.inventario.exception;
 
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -56,6 +58,21 @@ public class GlobalExceptionHandler {
         }
 
         Map<String, Object> cuerpo = cuerpoError(HttpStatus.BAD_REQUEST, "Datos inválidos");
+        cuerpo.put("errores", errores);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(cuerpo);
+    }
+
+    // Bean Validation que Hibernate ejecuta al hacer flush (no pasa por @Valid). Ocurre con
+    // registros antiguos que no cumplen las reglas actuales, ej. un producto sin categoría.
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<Map<String, Object>> handleConstraintViolation(ConstraintViolationException ex) {
+        Map<String, String> errores = new LinkedHashMap<>();
+        for (ConstraintViolation<?> violacion : ex.getConstraintViolations()) {
+            errores.putIfAbsent(violacion.getPropertyPath().toString(), violacion.getMessage());
+        }
+
+        Map<String, Object> cuerpo = cuerpoError(HttpStatus.BAD_REQUEST,
+                "El registro no cumple las validaciones: " + String.join("; ", errores.values()));
         cuerpo.put("errores", errores);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(cuerpo);
     }
