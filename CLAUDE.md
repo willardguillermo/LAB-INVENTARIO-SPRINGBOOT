@@ -7,27 +7,44 @@ Evaluación 02 del curso Desarrollo de Aplicaciones Web (Tecsup): arquitectura e
 (Controller, Service, Repository), relaciones JPA, validaciones, manejo global de excepciones,
 AOP y Spring Security con roles.
 
-Proyecto en equipo de 3:
+Proyecto en equipo de 3 (reparto de la evaluación):
 
-- **willardguillermo** (dueño de este entorno): módulo **Producto**
-  - RF-INV-01 Registrar productos
-  - RF-INV-02 Modificar productos
-  - RF-INV-03 Activar/desactivar productos
-  - RF-INV-14 Buscar y filtrar productos
-- **alexanderFaustino**: Categoría y Unidad de medida.
-- **mijaelino21-debug**: Proveedores.
-- Usuarios, roles, Spring Security y auditoría (AOP) los implementan los compañeros.
-  Los métodos de servicio de Producto deben quedar listos para ser interceptados por su
-  auditoría AOP (usuario, fecha, operación, entidad, id) y protegidos con `@PreAuthorize`.
+- **willardguillermo** (dueño de este entorno):
+  - P1 con **Producto**: RF-INV-01 Registrar, RF-INV-02 Modificar, RF-INV-03 Activar/desactivar,
+    RF-INV-14 Buscar y filtrar.
+  - **P2 Auditoría** (AOP): registra usuario, fecha y hora, operación, entidad e id del registro
+    en registro, modificación y eliminación lógica (desactivar), y permite consultar la bitácora.
+- **alexanderFaustino** (Categoría y Unidad de medida, RF-INV-15/16/17): P1 con `@OneToMany` en
+  Categoría y Unidad + P3 Usuarios y roles (backend) + P4 frontend de usuarios y roles.
+- **mijaelino21-debug** (Proveedor, RF-INV-20/21/22): P1 con `@OneToMany` en Proveedor +
+  P5 Spring Security y control de acceso.
+
+Roles acordados:
+
+| Rol | Permisos |
+|---|---|
+| ADMINISTRADOR | Todo |
+| ALMACENERO | Gestiona productos, categorías y proveedores |
+| MÉDICO | Solo consulta y búsqueda de productos |
+
+Los métodos de servicio de Producto deben quedar listos para protegerse con `@PreAuthorize`.
 
 Producto tiene `@ManyToOne` con Categoria y UnidadMedida (obligatorias) y Proveedor (opcional).
 
 ## Reglas
 
-1. Solo modificar archivos de Producto (`ProductoEntity`, `ProductoService`, `ProductoController`,
-   `ProductoRepository`, `ProductoServiceTest`), el paquete `exception/` (incluido
-   `GlobalExceptionHandler`) y la sección de productos de `src/main/resources/static/index.html`.
-   No tocar archivos de Categoría, UnidadMedida ni Proveedor sin preguntar antes.
+1. Solo modificar estos archivos:
+   - Producto: `ProductoEntity`, `ProductoService`, `ProductoController`, `ProductoRepository`,
+     `ProductoServiceTest`.
+   - El paquete `exception/` (incluido `GlobalExceptionHandler`).
+   - Auditoría: el paquete `aop/` (anotación `@Auditable`, aspecto y componente de usuario actual),
+     `entity/Auditoria`, `repository/AuditoriaRepository`, `service/AuditoriaService`,
+     `controller/AuditoriaController` y sus pruebas en `src/test/`.
+   - `pom.xml`, solo para agregar `spring-boot-starter-aspectj` y H2 (scope test).
+   - En `src/main/resources/static/index.html`: la sección de productos y la pestaña de Auditoría.
+
+   No tocar archivos de Categoría, UnidadMedida ni Proveedor sin preguntar antes (tampoco para
+   anotarlos con `@Auditable`: eso lo hace cada compañero).
 2. Los commits NO deben llevar "Co-Authored-By: Claude" ni "Generated with Claude Code".
    Mensajes de commit en español, en imperativo (ej. "Agrega endpoint para desactivar productos").
 3. No hacer push sin que el usuario lo pida.
@@ -51,7 +68,7 @@ mvnw.cmd spring-boot:run "-Dspring-boot.run.arguments=--spring.datasource.url=jd
 
 - XSS en `index.html`: las secciones de Categorías y Proveedores construyen el `onclick` con
   `JSON.stringify(...)` dentro del atributo HTML; un nombre con `&quot;` permite inyectar JavaScript.
-  (En Productos ya se corrigió.)
+  (En Productos se corrige como parte de este trabajo.)
 - `Categoria` y `UnidadMedida` no tienen `@NotBlank` y sus controladores no usan `@Valid`.
 - Inconsistencias: paquetes `model`/`models`/`entity`/`impl` mezclados, tres estilos de Lombok y
   tres convenciones de estado (`Boolean estado`, `Boolean activo`, `String "ACTIVO"`).
