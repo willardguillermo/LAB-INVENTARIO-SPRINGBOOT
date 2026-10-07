@@ -5,6 +5,7 @@ import com.willard.inventario.service.ProductoService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,7 +20,8 @@ public class ProductoController {
         this.productoService = productoService;
     }
 
-    // RF-INV-01: Registrar producto
+    // RF-INV-01: Registrar producto (solo ADMINISTRADOR)
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
     @PostMapping
     public ResponseEntity<ProductoEntity> registrarProducto(
             @Valid @RequestBody ProductoEntity producto) {
@@ -32,7 +34,8 @@ public class ProductoController {
                 .body(productoRegistrado);
     }
 
-    // RF-INV-02: Modificar producto
+    // RF-INV-02: Modificar producto (solo ADMINISTRADOR)
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
     @PutMapping("/{id}")
     public ResponseEntity<ProductoEntity> modificarProducto(
             @PathVariable Long id,
@@ -44,7 +47,8 @@ public class ProductoController {
         return ResponseEntity.ok(productoModificado);
     }
 
-    // Listar todos
+    // Listar todos (ADMINISTRADOR y MEDICO)
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'MEDICO')")
     @GetMapping
     public ResponseEntity<List<ProductoEntity>> listarProductos() {
         return ResponseEntity.ok(
@@ -52,7 +56,8 @@ public class ProductoController {
         );
     }
 
-    // Buscar por ID
+    // Buscar por ID (ADMINISTRADOR y MEDICO)
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'MEDICO')")
     @GetMapping("/{id}")
     public ResponseEntity<ProductoEntity> buscarPorId(
             @PathVariable Long id) {
@@ -62,7 +67,8 @@ public class ProductoController {
         );
     }
 
-    // RF-INV-14: Buscar por nombre
+    // RF-INV-14: Buscar por nombre (ADMINISTRADOR y MEDICO)
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'MEDICO')")
     @GetMapping("/buscar")
     public ResponseEntity<List<ProductoEntity>> buscarPorNombre(
             @RequestParam String nombre) {
@@ -72,7 +78,8 @@ public class ProductoController {
         );
     }
 
-    // RF-INV-14: Filtrar por tipo
+    // RF-INV-14: Filtrar por tipo (ADMINISTRADOR y MEDICO)
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'MEDICO')")
     @GetMapping("/filtrar/tipo")
     public ResponseEntity<List<ProductoEntity>> filtrarPorTipo(
             @RequestParam String tipoProducto) {
@@ -82,7 +89,8 @@ public class ProductoController {
         );
     }
 
-    // RF-INV-14: Filtrar por estado
+    // RF-INV-14: Filtrar por estado (ADMINISTRADOR y MEDICO)
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'MEDICO')")
     @GetMapping("/filtrar/estado")
     public ResponseEntity<List<ProductoEntity>> filtrarPorEstado(
             @RequestParam Boolean activo) {
@@ -92,7 +100,8 @@ public class ProductoController {
         );
     }
 
-    // RF-INV-14: Buscar por nombre y tipo
+    // RF-INV-14: Buscar por nombre y tipo (ADMINISTRADOR y MEDICO)
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'MEDICO')")
     @GetMapping("/filtrar")
     public ResponseEntity<List<ProductoEntity>> buscarPorNombreYTipo(
             @RequestParam String nombre,
