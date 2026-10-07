@@ -11,4 +11,7 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
     Optional<Usuario> findByUsername(String username);
 
+    // Para no permitir desactivar al último ADMINISTRADOR activo
+    long countByRol_NombreAndEstado(String nombreRol, Boolean estado);
+
 }

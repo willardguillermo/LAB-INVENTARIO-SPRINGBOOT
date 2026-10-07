@@ -1,11 +1,11 @@
 package com.willard.inventario.service;
 
 import com.willard.inventario.aop.Auditable;
+import com.willard.inventario.aop.UsuarioActualProvider;
 import com.willard.inventario.models.Rol;
 import com.willard.inventario.models.Usuario;
 import com.willard.inventario.repository.UsuarioRepository;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,13 +16,19 @@ import java.util.List;
 @Service
 public class UsuarioService {
 
+    private static final String ROL_ADMINISTRADOR = "ADMINISTRADOR";
+
     private final UsuarioRepository usuarioRepository;
     private final RolService rolService;
-    private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    private final PasswordEncoder passwordEncoder;
+    private final UsuarioActualProvider usuarioActualProvider;
 
-    public UsuarioService(UsuarioRepository usuarioRepository, RolService rolService) {
+    public UsuarioService(UsuarioRepository usuarioRepository, RolService rolService,
+                           PasswordEncoder passwordEncoder, UsuarioActualProvider usuarioActualProvider) {
         this.usuarioRepository = usuarioRepository;
         this.rolService = rolService;
+        this.passwordEncoder = passwordEncoder;
+        this.usuarioActualProvider = usuarioActualProvider;
     }
 
     public List<Usuario> listar() {
@@ -31,6 +37,13 @@ public class UsuarioService {
 
     public Usuario obtenerPorId(Long id) {
         return usuarioRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
+    }
+
+    // El usuario de la sesión activa; lo usan las plantillas Thymeleaf y GET /api/sesion.
+    public Usuario obtenerUsuarioAutenticado() {
+        String username = usuarioActualProvider.obtenerUsuario();
+        return usuarioRepository.findByUsername(username)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
     }
 
@@ -59,7 +72,8 @@ public class UsuarioService {
         if (datos.getRol() != null && datos.getRol().getId() != null) {
             usuario.setRol(rolService.obtenerPorId(datos.getRol().getId()));
         }
-        // Solo se cambia la clave si se escribió una nueva
+        // Solo se cambia la clave si se escribió una nueva; en blanco conserva la actual
+        // (el formulario de edición la deja vacía a propósito, nunca precarga el hash guardado).
         if (datos.getPassword() != null && !datos.getPassword().isBlank()) {
             usuario.setPassword(passwordEncoder.encode(datos.getPassword()));
         }
@@ -70,7 +84,25 @@ public class UsuarioService {
     @Auditable(entidad = "Usuario", operacion = "MODIFICAR", detalle = "Cambio de estado")
     public Usuario cambiarEstado(Long id) {
         Usuario usuario = obtenerPorId(id);
+
+        if (usuario.getUsername().equals(usuarioActualProvider.obtenerUsuario())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "No puedes cambiar el estado de tu propio usuario");
+        }
+
+        boolean vaADesactivarse = Boolean.TRUE.equals(usuario.getEstado());
+        if (vaADesactivarse && esUltimoAdministradorActivo(usuario)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "No se puede desactivar al último administrador activo");
+        }
+
         usuario.setEstado(!usuario.getEstado());
         return usuarioRepository.save(usuario);
+    }
+
+    private boolean esUltimoAdministradorActivo(Usuario usuario) {
+        return usuario.getRol() != null
+                && ROL_ADMINISTRADOR.equals(usuario.getRol().getNombre())
+                && usuarioRepository.countByRol_NombreAndEstado(ROL_ADMINISTRADOR, true) <= 1;
     }
 }
