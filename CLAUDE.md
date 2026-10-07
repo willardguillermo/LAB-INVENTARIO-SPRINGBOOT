@@ -63,7 +63,8 @@ mvnw.cmd spring-boot:run "-Dspring-boot.run.arguments=--spring.datasource.url=jd
 ```
 
 - Compilar: `mvnw.cmd compile`
-- Todas las pruebas (usan H2 en memoria, no requieren MySQL): `mvnw.cmd test`
+- Todas las pruebas (usan H2 en memoria, no requieren MySQL): `mvnw.cmd test` (30 pruebas)
+- Solo la auditoría: `mvnw.cmd test -Dtest=AuditoriaIntegracionTest`
 - Solo las de Producto: `mvnw.cmd test -Dtest=ProductoServiceTest`
 
 ### Datos de demo
@@ -105,8 +106,8 @@ Un commit por paso. Estado al último commit de esta rama:
 | 8 | H2 para pruebas, `contextLoads` sin MySQL | ✅ | `210336b` |
 | 9 | P2-B: `spring-boot-starter-aspectj`, entidad `Auditoria`, `@Auditable`, aspecto, evento AFTER_COMMIT guardado con REQUIRES_NEW, `UsuarioActualProvider` ("sistema" + TODO), anotar `ProductoService`, pendientes del equipo | ✅ | `a0c5def` |
 | 10 | P2-C: `GET /api/auditoria` con filtros (entidad, operación, usuario, rango de fechas), más reciente primero, paginado (50 por defecto) con DTO propio (no serializar `Page`) | ✅ | `698f1ac` |
-| 11 | P2-D: pestaña Auditoría en `index.html` (glassmorphism, sin XSS) | ✅ | (este commit) |
-| 12 | P2-E: test de integración "registrar producto genera auditoría" (no `@Transactional`; limpiar en `@AfterEach`) | pendiente | |
+| 11 | P2-D: pestaña Auditoría en `index.html` (glassmorphism, sin XSS) | ✅ | `6a0d599` |
+| 12 | P2-E: `AuditoriaIntegracionTest` (registrar genera auditoría, desactivar = eliminación lógica, operación fallida no se audita); no `@Transactional`, limpia en `@AfterEach` | ✅ | (este commit) |
 
 Decisiones ya tomadas (no volver a preguntar):
 
