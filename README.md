@@ -13,8 +13,11 @@ JPA/Hibernate y MySQL. Proyecto de la Evaluación 02 del curso Desarrollo de Apl
 - **Spring Security con roles** (ADMINISTRADOR, MEDICO, RECEPCIONISTA): login con usuario y
   contraseña, control de acceso por rol a nivel de método y de URL, y usuarios/roles gestionables
   desde el propio panel.
-- Panel web de prueba en `http://localhost:8080` (pestañas de Productos, Categorías, Unidades de
-  medida, Proveedores y Auditoría; Usuarios y Roles solo para ADMINISTRADOR).
+- Panel web en `http://localhost:8080` (pestañas de Productos, Categorías, Unidades de medida,
+  Proveedores y Auditoría; Usuarios y Roles solo para ADMINISTRADOR). Interfaz de vidrio claro con
+  un tema compartido (`static/css/tema.css`) entre el panel y las páginas Thymeleaf: buscador y
+  filtros por pestaña, formularios en un panel lateral, interruptor Activo/Inactivo con
+  confirmación al desactivar y tablas que se convierten en tarjetas por debajo de 760 px.
 
 **Tecnologías:** Java 21, Spring Boot 4.1, Spring Data JPA, Hibernate, MySQL, Spring Security,
 Thymeleaf, Lombok, AspectJ, JUnit 5, Mockito y H2 (solo para pruebas).
@@ -238,8 +241,8 @@ de Spring Security) queda como `sistema`. Solo ADMINISTRADOR puede consultar `/a
 
 ## Datos de demostración
 
-`src/main/resources/datos-demo.sql` carga 5 categorías, 5 unidades de medida, 3 proveedores
-ficticios y 15 productos hospitalarios (medicamentos, insumos y material médico; 3 de ellos inactivos).
+`src/main/resources/datos-demo.sql` carga 5 categorías, 6 unidades de medida, 3 proveedores
+ficticios y 16 productos hospitalarios (medicamentos, insumos y material médico; 3 de ellos inactivos).
 
 - **No** se ejecuta automáticamente al arrancar.
 - Las tablas deben existir: arranca la app al menos una vez antes de cargarlo.

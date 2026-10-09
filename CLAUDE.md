@@ -7,7 +7,9 @@ Evaluación 02 del curso Desarrollo de Aplicaciones Web (Tecsup): arquitectura e
 (Controller, Service, Repository), relaciones JPA, validaciones, manejo global de excepciones,
 AOP y Spring Security con roles.
 
-Incluye un panel web de prueba en `src/main/resources/static/index.html` (http://localhost:8080).
+Incluye un panel web en `src/main/resources/static/index.html` (http://localhost:8080). Los estilos
+están en `static/css/tema.css` (variables en `:root`), compartidos con las plantillas Thymeleaf a
+través de `fragments/layout.html` (fragmentos `estilos`, `barra(activo)` y `confirmacion`).
 El README tiene los endpoints, las reglas de negocio de producto y cómo ejecutar y probar.
 
 ## Equipo y reparto de la evaluación
@@ -102,10 +104,6 @@ public Proveedor desactivar(Long id) { ... }
 
 ### Generales
 
-- XSS en `index.html`: las secciones de Categorías y Proveedores construyen el `onclick` con
-  `JSON.stringify(...)` dentro del atributo HTML; un nombre con `&quot;` permite inyectar JavaScript.
-  En Productos ya se corrigió (botones con `data-id` y los datos en un `Map`).
-- `Categoria` y `UnidadMedida` no tienen `@NotBlank` y sus controladores no usan `@Valid`.
 - Inconsistencias: paquetes `model`/`models`/`entity`/`impl` mezclados, tres estilos de Lombok y
   tres convenciones de estado (`Boolean estado`, `Boolean activo`, `String "ACTIVO"`).
 - Se agregó H2 (`com.h2database:h2`, scope test) solo para pruebas, con
