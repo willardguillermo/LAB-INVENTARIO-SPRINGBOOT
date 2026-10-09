@@ -3,626 +3,111 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Inventario Hospitalario</title>
-<style>
-  :root {
-    --bg-a: #0b1220;
-    --bg-b: #142033;
-    --glass: rgba(255, 255, 255, 0.62);
-    --glass-strong: rgba(255, 255, 255, 0.78);
-    --glass-border: rgba(255, 255, 255, 0.55);
-    --glass-dark: rgba(15, 23, 42, 0.55);
-    --glass-dark-border: rgba(255, 255, 255, 0.12);
-    --text: #101828;
-    --text-inverse: #f1f5f9;
-    --muted: #5b6472;
-    --muted-inverse: #a3b0c2;
-    --primary: #2563eb;
-    --primary-2: #06b6d4;
-    --primary-dark: #1d4ed8;
-    --danger: #dc2626;
-    --success: #16a34a;
-    --radius: 18px;
-  }
-  * { box-sizing: border-box; }
-
-  body {
-    margin: 0;
-    min-height: 100vh;
-    font-family: "Segoe UI", system-ui, Arial, sans-serif;
-    color: var(--text);
-    background: var(--bg-a);
-    position: relative;
-    overflow-x: hidden;
-  }
-
-  /* Fondo con manchas de color difuminadas para dar profundidad al glassmorfismo */
-  body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-    background:
-      radial-gradient(560px 420px at 8% 10%, rgba(37, 99, 235, 0.55), transparent 60%),
-      radial-gradient(520px 420px at 92% 20%, rgba(6, 182, 212, 0.45), transparent 60%),
-      radial-gradient(600px 500px at 25% 95%, rgba(139, 92, 246, 0.35), transparent 60%),
-      radial-gradient(520px 420px at 85% 90%, rgba(16, 185, 129, 0.3), transparent 60%),
-      linear-gradient(160deg, var(--bg-a), var(--bg-b));
-    filter: blur(10px);
-  }
-
-  header, nav, main, #toast { position: relative; z-index: 1; }
-
-  header {
-    background: var(--glass-dark);
-    backdrop-filter: blur(18px) saturate(140%);
-    -webkit-backdrop-filter: blur(18px) saturate(140%);
-    border-bottom: 1px solid var(--glass-dark-border);
-    color: var(--text-inverse);
-    padding: 20px 28px;
-  }
-  header h1 {
-    margin: 0;
-    font-size: 1.35rem;
-    letter-spacing: 0.2px;
-  }
-  header p { margin: 4px 0 0; color: var(--muted-inverse); font-size: 0.85rem; }
-
-  #sesion-bar {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    margin-top: 12px;
-    font-size: 0.85rem;
-  }
-  #sesion-bar #sesion-info { color: var(--text-inverse); font-weight: 600; }
-  #sesion-bar a { color: var(--muted-inverse); text-decoration: none; }
-  #sesion-bar a:hover { color: var(--text-inverse); text-decoration: underline; }
-  #sesion-bar button { padding: 6px 14px; font-size: 0.78rem; }
-
-  nav {
-    display: flex;
-    gap: 6px;
-    background: var(--glass-dark);
-    backdrop-filter: blur(18px) saturate(140%);
-    -webkit-backdrop-filter: blur(18px) saturate(140%);
-    border-bottom: 1px solid var(--glass-dark-border);
-    padding: 10px 24px;
-    overflow-x: auto;
-    position: sticky;
-    top: 0;
-  }
-  nav button {
-    background: transparent;
-    border: 1px solid transparent;
-    color: var(--muted-inverse);
-    padding: 9px 18px;
-    cursor: pointer;
-    font-size: 0.88rem;
-    border-radius: 999px;
-    white-space: nowrap;
-    transition: all 0.2s ease;
-  }
-  nav button:hover { color: var(--text-inverse); background: rgba(255, 255, 255, 0.08); }
-  nav button.active {
-    color: white;
-    font-weight: 600;
-    background: linear-gradient(135deg, var(--primary), var(--primary-2));
-    border-color: transparent;
-    box-shadow: 0 4px 16px rgba(37, 99, 235, 0.4);
-  }
-
-  main {
-    max-width: 1150px;
-    margin: 28px auto 60px;
-    padding: 0 20px;
-  }
-  .tab { display: none; }
-  .tab.active { display: block; animation: fadeIn 0.35s ease; }
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(6px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .card {
-    background: var(--glass);
-    backdrop-filter: blur(22px) saturate(160%);
-    -webkit-backdrop-filter: blur(22px) saturate(160%);
-    border: 1px solid var(--glass-border);
-    border-radius: var(--radius);
-    padding: 22px 24px;
-    margin-bottom: 22px;
-    box-shadow: 0 8px 32px rgba(15, 23, 42, 0.18);
-  }
-  .card h2 {
-    margin-top: 0;
-    font-size: 1.05rem;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .card h2::before {
-    content: "";
-    width: 8px;
-    height: 8px;
-    border-radius: 999px;
-    background: linear-gradient(135deg, var(--primary), var(--primary-2));
-    display: inline-block;
-  }
-
-  form.grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 12px 14px;
-    align-items: end;
-  }
-  label {
-    display: block;
-    font-size: 0.75rem;
-    color: var(--muted);
-    margin-bottom: 4px;
-    font-weight: 600;
-  }
-  input, select {
-    width: 100%;
-    padding: 8px 10px;
-    border: 1px solid rgba(16, 24, 40, 0.14);
-    border-radius: 10px;
-    font-size: 0.9rem;
-    background: var(--glass-strong);
-    color: var(--text);
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
-  }
-  input:focus, select:focus {
-    outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
-  }
-  .checkbox-field {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding-bottom: 8px;
-  }
-  .checkbox-field input { width: auto; }
-
-  button.action {
-    background: linear-gradient(135deg, var(--primary), var(--primary-2));
-    color: white;
-    border: none;
-    padding: 9px 18px;
-    border-radius: 10px;
-    cursor: pointer;
-    font-size: 0.85rem;
-    font-weight: 600;
-    height: fit-content;
-    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
-  }
-  button.action:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(37, 99, 235, 0.45); }
-  button.action:active { transform: translateY(0); }
-  button.secondary {
-    background: rgba(16, 24, 40, 0.06);
-    color: var(--text);
-    box-shadow: none;
-    border: 1px solid rgba(16, 24, 40, 0.12);
-  }
-  button.secondary:hover { background: rgba(16, 24, 40, 0.1); box-shadow: none; }
-  button.danger { background: linear-gradient(135deg, var(--danger), #f97316); }
-
-  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-  th, td {
-    text-align: left;
-    padding: 10px 12px;
-    border-bottom: 1px solid rgba(16, 24, 40, 0.08);
-    white-space: nowrap;
-  }
-  th {
-    color: var(--muted);
-    font-weight: 700;
-    font-size: 0.72rem;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    background: rgba(255, 255, 255, 0.35);
-  }
-  tr:hover td { background: rgba(37, 99, 235, 0.06); }
-
-  .badge {
-    display: inline-block;
-    padding: 3px 10px;
-    border-radius: 999px;
-    font-size: 0.72rem;
-    font-weight: 700;
-    border: 1px solid transparent;
-  }
-  .badge.on { background: rgba(22, 163, 74, 0.12); color: var(--success); border-color: rgba(22, 163, 74, 0.25); }
-  .badge.off { background: rgba(220, 38, 38, 0.1); color: var(--danger); border-color: rgba(220, 38, 38, 0.22); }
-
-  .filters {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 14px;
-  }
-  .filters input, .filters select { width: auto; min-width: 140px; }
-
-  #toast {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    background: var(--glass-dark);
-    backdrop-filter: blur(18px) saturate(160%);
-    -webkit-backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid var(--glass-dark-border);
-    color: white;
-    padding: 12px 18px;
-    border-radius: 12px;
-    font-size: 0.85rem;
-    opacity: 0;
-    transform: translateY(10px);
-    transition: all 0.25s ease;
-    max-width: 360px;
-    z-index: 999;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-  }
-  #toast.show { opacity: 1; transform: translateY(0); }
-  #toast.error { background: rgba(220, 38, 38, 0.85); border-color: rgba(220, 38, 38, 0.5); }
-  #toast.success { background: rgba(22, 163, 74, 0.85); border-color: rgba(22, 163, 74, 0.5); }
-
-  .actions-cell { display: flex; gap: 6px; }
-  .actions-cell button { font-size: 0.75rem; padding: 5px 10px; }
-  .empty-row td { text-align: center; color: var(--muted); padding: 22px; }
-
-  /* Tabla de productos: columna Acciones fija a la derecha durante el scroll horizontal */
-  #productos .col-acciones {
-    position: sticky;
-    right: 0;
-    z-index: 1;
-    background: rgba(241, 245, 249, 0.82);
-    backdrop-filter: blur(14px) saturate(160%);
-    -webkit-backdrop-filter: blur(14px) saturate(160%);
-    box-shadow: -10px 0 14px -10px rgba(15, 23, 42, 0.45);
-  }
-  #productos th.col-acciones { background: rgba(248, 250, 252, 0.9); }
-  #productos tr:hover td.col-acciones {
-    background: linear-gradient(rgba(37, 99, 235, 0.06), rgba(37, 99, 235, 0.06)), rgba(241, 245, 249, 0.82);
-  }
-
-  /* Pestaña Auditoría */
-  #auditoria .badge.op-registrar { background: rgba(37, 99, 235, 0.12); color: var(--primary-dark); border-color: rgba(37, 99, 235, 0.25); }
-  #auditoria .badge.op-modificar { background: rgba(217, 119, 6, 0.12); color: #b45309; border-color: rgba(217, 119, 6, 0.25); }
-  #auditoria .aud-fecha {
-    display: flex; align-items: center; gap: 6px; margin: 0;
-    font-size: 0.78rem; color: var(--muted);
-  }
-  #auditoria .aud-paginacion {
-    display: flex; align-items: center; justify-content: flex-end; gap: 12px;
-    margin-top: 14px; font-size: 0.82rem; color: var(--muted);
-  }
-  #auditoria .aud-paginacion button:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
-
-  ::-webkit-scrollbar { height: 8px; width: 8px; }
-  ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.25); border-radius: 999px; }
-</style>
+<title>Inventario hospitalario</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<link rel="stylesheet" href="/css/tema.css">
 </head>
 <body>
 
-<header>
-  <h1>Inventario y Almacén Hospitalario</h1>
-  <p>Panel de prueba para las APIs REST (Productos · Categorías · Unidades de Medida · Proveedores · Auditoría)</p>
-  <div id="sesion-bar">
-    <span id="sesion-info"></span>
-    <a id="link-usuarios" class="solo-admin" href="/usuarios" style="display:none">Usuarios</a>
-    <a id="link-roles" class="solo-admin" href="/roles" style="display:none">Roles</a>
-    <form method="post" action="/logout" style="display:inline">
-      <button type="submit" class="action secondary" id="btn-logout">Cerrar sesión</button>
+<!-- #region barra -->
+<header class="barra-superior">
+  <a class="marca" href="#productos" aria-label="Inventario hospitalario, ir a Productos" data-tab-enlace="productos">
+    <span class="marca-logo" aria-hidden="true">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    </span>
+    <span class="marca-texto"><strong>Inventario hospitalario</strong><span>Almacén y suministros</span></span>
+  </a>
+
+  <nav class="segmentado" aria-label="Secciones">
+    <button type="button" data-tab="productos">Productos</button>
+    <button type="button" data-tab="categorias">Categorías</button>
+    <button type="button" data-tab="unidades">Unidades de medida</button>
+    <button type="button" data-tab="proveedores">Proveedores</button>
+    <button type="button" data-tab="auditoria" class="solo-admin" hidden>Auditoría</button>
+    <a href="/usuarios" class="solo-admin" hidden>Usuarios</a>
+    <a href="/roles" class="solo-admin" hidden>Roles</a>
+  </nav>
+
+  <div class="usuario-sesion">
+    <div class="quien"><strong id="sesion-nombre"></strong><span id="sesion-rol"></span></div>
+    <form method="post" action="/logout">
+      <button type="submit" class="btn btn-secundario btn-sm salir">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>
+        <span>Cerrar sesión</span>
+      </button>
     </form>
   </div>
 </header>
+<!-- #endregion barra -->
 
-<nav>
-  <button class="tab-btn active" data-tab="productos">Productos</button>
-  <button class="tab-btn" data-tab="categorias">Categorías</button>
-  <button class="tab-btn" data-tab="unidades">Unidades de Medida</button>
-  <button class="tab-btn" data-tab="proveedores">Proveedores</button>
-  <button class="tab-btn solo-admin" data-tab="auditoria" style="display:none">Auditoría</button>
-</nav>
+<main class="contenido">
 
-<main>
 
-  <!-- ================= PRODUCTOS ================= -->
-  <section id="productos" class="tab active">
-    <div class="card solo-admin" id="card-form-producto" style="display:none">
-      <h2 id="producto-form-title">Registrar producto</h2>
-      <form class="grid" id="form-producto">
-        <input type="hidden" id="producto-id">
-        <div>
-          <label>Nombre *</label>
-          <input type="text" id="producto-nombre" required maxlength="150">
-        </div>
-        <div>
-          <label>Tipo de producto *</label>
-          <input type="text" id="producto-tipo" required maxlength="100">
-        </div>
-        <div>
-          <label>Descripción</label>
-          <input type="text" id="producto-descripcion" maxlength="500">
-        </div>
-        <div>
-          <label>Marca</label>
-          <input type="text" id="producto-marca" maxlength="100">
-        </div>
-        <div>
-          <label>Fabricante</label>
-          <input type="text" id="producto-fabricante" maxlength="150">
-        </div>
-        <div>
-          <label>Código</label>
-          <input type="text" id="producto-codigo" maxlength="50">
-        </div>
-        <div>
-          <label>Código de barras</label>
-          <input type="text" id="producto-codigoBarras" maxlength="100">
-        </div>
-        <div>
-          <label>Categoría *</label>
-          <select id="producto-categoria" required><option value="">— Selecciona —</option></select>
-        </div>
-        <div>
-          <label>Unidad de medida *</label>
-          <select id="producto-unidad" required><option value="">— Selecciona —</option></select>
-        </div>
-        <div>
-          <label>Proveedor</label>
-          <select id="producto-proveedor"><option value="">— Sin proveedor —</option></select>
-        </div>
-        <div>
-          <label>Stock mínimo</label>
-          <input type="number" id="producto-stockMinimo" min="0">
-        </div>
-        <div>
-          <label>Stock máximo</label>
-          <input type="number" id="producto-stockMaximo" min="0">
-        </div>
-        <div>
-          <label>Punto de reposición</label>
-          <input type="number" id="producto-puntoReposicion" min="0">
-        </div>
-        <div class="checkbox-field">
-          <input type="checkbox" id="producto-manejaLote">
-          <label style="margin:0">Maneja lote</label>
-        </div>
-        <div class="checkbox-field">
-          <input type="checkbox" id="producto-manejaVencimiento">
-          <label style="margin:0">Maneja vencimiento</label>
-        </div>
-        <div style="display:flex; gap:8px;">
-          <button type="submit" class="action" id="producto-submit-btn">Guardar</button>
-          <button type="button" class="action secondary" id="producto-cancel-btn" style="display:none">Cancelar</button>
-        </div>
-      </form>
-    </div>
 
-    <div class="card">
-      <h2>Listado de productos</h2>
-      <div class="filters">
-        <input type="text" id="filtro-nombre" placeholder="Buscar por nombre...">
-        <input type="text" id="filtro-tipo" placeholder="Filtrar por tipo...">
-        <select id="filtro-estado">
-          <option value="">Todos los estados</option>
-          <option value="true">Activos</option>
-          <option value="false">Inactivos</option>
-        </select>
-        <select id="filtro-categoria"><option value="">Todas las categorías</option></select>
-        <select id="filtro-proveedor"><option value="">Todos los proveedores</option></select>
-        <button class="action" id="btn-filtrar">Buscar</button>
-        <button class="action secondary" id="btn-limpiar-filtro">Limpiar</button>
-      </div>
-      <div style="overflow-x:auto">
-        <table>
-          <thead>
-            <tr>
-              <th>ID</th><th>Nombre</th><th>Tipo</th><th>Categoría</th><th>Unidad</th><th>Proveedor</th>
-              <th>Stock (min/max/rep)</th><th>Lote</th><th>Venc.</th><th>Estado</th><th class="col-acciones">Acciones</th>
-            </tr>
-          </thead>
-          <tbody id="productos-tbody"></tbody>
-        </table>
-      </div>
-    </div>
-  </section>
 
-  <!-- ================= CATEGORIAS ================= -->
-  <section id="categorias" class="tab">
-    <div class="card solo-admin" id="card-form-categoria" style="display:none">
-      <h2 id="categoria-form-title">Registrar categoría</h2>
-      <form class="grid" id="form-categoria">
-        <input type="hidden" id="categoria-id">
-        <div>
-          <label>Nombre *</label>
-          <input type="text" id="categoria-nombre" required>
-        </div>
-        <div>
-          <label>Descripción</label>
-          <input type="text" id="categoria-descripcion">
-        </div>
-        <div class="checkbox-field">
-          <input type="checkbox" id="categoria-estado" checked>
-          <label style="margin:0">Activa</label>
-        </div>
-        <div style="display:flex; gap:8px;">
-          <button type="submit" class="action">Guardar</button>
-          <button type="button" class="action secondary" id="categoria-cancel-btn" style="display:none">Cancelar</button>
-        </div>
-      </form>
-    </div>
-    <div class="card">
-      <h2>Listado de categorías</h2>
-      <table>
-        <thead><tr><th>ID</th><th>Nombre</th><th>Descripción</th><th>Estado</th><th>Acciones</th></tr></thead>
-        <tbody id="categorias-tbody"></tbody>
-      </table>
-    </div>
-  </section>
 
-  <!-- ================= UNIDADES ================= -->
-  <section id="unidades" class="tab">
-    <div class="card solo-admin" id="card-form-unidad" style="display:none">
-      <h2>Registrar unidad de medida</h2>
-      <form class="grid" id="form-unidad">
-        <div>
-          <label>Nombre *</label>
-          <input type="text" id="unidad-nombre" required>
-        </div>
-        <div>
-          <label>Abreviatura *</label>
-          <input type="text" id="unidad-abreviatura" required>
-        </div>
-        <div>
-          <button type="submit" class="action">Guardar</button>
-        </div>
-      </form>
-      <p style="color:var(--muted); font-size:0.8rem; margin-bottom:0;">
-        Nota: la API de Unidades de Medida por ahora solo expone registrar y listar (no modificar).
-      </p>
-    </div>
-    <div class="card">
-      <h2>Listado de unidades de medida</h2>
-      <table>
-        <thead><tr><th>ID</th><th>Nombre</th><th>Abreviatura</th><th>Estado</th></tr></thead>
-        <tbody id="unidades-tbody"></tbody>
-      </table>
-    </div>
-  </section>
-
-  <!-- ================= PROVEEDORES ================= -->
-  <section id="proveedores" class="tab">
-    <div class="card solo-admin" id="card-form-proveedor" style="display:none">
-      <h2 id="proveedor-form-title">Registrar proveedor</h2>
-      <form class="grid" id="form-proveedor">
-        <input type="hidden" id="proveedor-id">
-        <div>
-          <label>RUC *</label>
-          <input type="text" id="proveedor-ruc" required>
-        </div>
-        <div>
-          <label>Razón social *</label>
-          <input type="text" id="proveedor-razonSocial" required>
-        </div>
-        <div>
-          <label>Contacto</label>
-          <input type="text" id="proveedor-contacto">
-        </div>
-        <div>
-          <label>Teléfono</label>
-          <input type="text" id="proveedor-telefono">
-        </div>
-        <div>
-          <label>Email</label>
-          <input type="email" id="proveedor-email">
-        </div>
-        <div>
-          <label>Dirección</label>
-          <input type="text" id="proveedor-direccion">
-        </div>
-        <div>
-          <label>Estado</label>
-          <select id="proveedor-estado">
-            <option value="ACTIVO">ACTIVO</option>
-            <option value="INACTIVO">INACTIVO</option>
-          </select>
-        </div>
-        <div style="display:flex; gap:8px;">
-          <button type="submit" class="action">Guardar</button>
-          <button type="button" class="action secondary" id="proveedor-cancel-btn" style="display:none">Cancelar</button>
-        </div>
-      </form>
-    </div>
-    <div class="card">
-      <h2>Listado de proveedores</h2>
-      <table>
-        <thead><tr><th>ID</th><th>RUC</th><th>Razón social</th><th>Contacto</th><th>Teléfono</th><th>Estado</th><th>Acciones</th></tr></thead>
-        <tbody id="proveedores-tbody"></tbody>
-      </table>
-    </div>
-  </section>
-
-  <!-- ================= AUDITORIA ================= -->
-  <section id="auditoria" class="tab">
-    <div class="card">
-      <h2>Bitácora de auditoría</h2>
-      <div class="filters">
-        <select id="aud-entidad">
-          <option value="">Todas las entidades</option>
-          <option value="Producto">Producto</option>
-          <option value="Categoria">Categoría</option>
-          <option value="UnidadMedida">Unidad de medida</option>
-          <option value="Proveedor">Proveedor</option>
-          <option value="Usuario">Usuario</option>
-        </select>
-        <select id="aud-operacion">
-          <option value="">Todas las operaciones</option>
-          <option value="REGISTRAR">Registrar</option>
-          <option value="MODIFICAR">Modificar</option>
-          <option value="ACTIVAR">Activar</option>
-          <option value="DESACTIVAR">Desactivar</option>
-        </select>
-        <input type="text" id="aud-usuario" placeholder="Usuario..." maxlength="100">
-        <label class="aud-fecha">Desde <input type="date" id="aud-desde"></label>
-        <label class="aud-fecha">Hasta <input type="date" id="aud-hasta"></label>
-        <button class="action" id="btn-aud-filtrar">Buscar</button>
-        <button class="action secondary" id="btn-aud-limpiar">Limpiar</button>
-      </div>
-      <div style="overflow-x:auto">
-        <table>
-          <thead>
-            <tr><th>Fecha y hora</th><th>Usuario</th><th>Operación</th><th>Entidad</th><th>ID registro</th><th>Detalle</th></tr>
-          </thead>
-          <tbody id="auditoria-tbody"></tbody>
-        </table>
-      </div>
-      <div class="aud-paginacion">
-        <button class="action secondary" id="aud-anterior">&larr; Anterior</button>
-        <span id="aud-info"></span>
-        <button class="action secondary" id="aud-siguiente">Siguiente &rarr;</button>
-      </div>
-    </div>
-  </section>
 
 </main>
 
-<div id="toast"></div>
+
+
+
+
+<!-- Confirmación (desactivar, eliminar) -->
+<dialog class="modal" id="modal-confirmar" aria-labelledby="confirmar-titulo" aria-describedby="confirmar-mensaje">
+  <form method="dialog">
+    <h2 id="confirmar-titulo"></h2>
+    <p id="confirmar-mensaje"></p>
+    <div class="modal-acciones">
+      <button value="no" class="btn btn-secundario" id="confirmar-cancelar">Cancelar</button>
+      <button value="si" class="btn btn-principal" id="confirmar-aceptar">Aceptar</button>
+    </div>
+  </form>
+</dialog>
+
+<div class="avisos" id="avisos" aria-live="polite"></div>
 
 <script>
 const API = "/api";
+const $ = id => document.getElementById(id);
 
-// ---------- helpers ----------
-function toast(msg, type) {
-  const el = document.getElementById("toast");
-  el.textContent = msg;
-  el.className = "show" + (type ? " " + type : "");
-  clearTimeout(el._t);
-  el._t = setTimeout(() => { el.className = ""; }, 3200);
-}
+const ICONOS = {
+  editar: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
+  exito: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>',
+  error: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16.5v.5"/></svg>',
+  info: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5V8"/></svg>'
+};
 
+// ---------- API ----------
 async function apiFetch(path, options) {
   const res = await fetch(API + path, options);
   if (res.status === 401) {
     window.location.href = "/login";
-    throw new Error("No autenticado");
+    throw new Error("Tu sesión expiró");
   }
   let body = null;
   const text = await res.text();
   try { body = text ? JSON.parse(text) : null; } catch (e) { body = text; }
   if (!res.ok) {
-    const msg = (body && (body.message || body.error)) || `Error HTTP ${res.status}`;
-    const err = new Error(msg);
+    const err = new Error((body && (body.message || body.error)) || `Error HTTP ${res.status}`);
+    err.status = res.status;
     err.errores = body && body.errores;   // detalle por campo de los errores de validación
     throw err;
   }
   return body;
 }
 
+function enviarJson(path, method, datos) {
+  return apiFetch(path, {
+    method,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(datos)
+  });
+}
+
+// ---------- utilidades ----------
 function esc(v) {
   if (v === null || v === undefined) return "";
   return String(v).replace(/[&<>"']/g, c => ({
@@ -630,554 +115,312 @@ function esc(v) {
   }[c]));
 }
 
-// ---------- tabs ----------
-document.querySelectorAll(".tab-btn").forEach(btn => {
-  btn.addEventListener("click", () => {
-    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
-    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
-    btn.classList.add("active");
-    document.getElementById(btn.dataset.tab).classList.add("active");
-  });
-});
-
-// ======================================================
-// PRODUCTOS
-// ======================================================
-// Productos del último listado, por id: los botones de la tabla solo llevan data-id
-// (nunca el objeto serializado en un onclick, que permitía inyectar JavaScript).
-const productosPorId = new Map();
-
-function opcionesHtml(lista, textoDe) {
-  return lista.map(x => `<option value="${Number(x.id)}">${esc(textoDe(x))}</option>`).join("");
+function normalizar(texto) {
+  return String(texto || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 }
 
-async function cargarSelectsProducto() {
-  const [categorias, unidades, proveedores] = await Promise.all([
-    apiFetch("/categorias").catch(() => []),
-    apiFetch("/unidades-medida").catch(() => []),
-    apiFetch("/proveedores").catch(() => [])
-  ]);
-  const textoUnidad = u => `${u.nombre} (${u.abreviatura})`;
-
-  // Formulario: solo relaciones activas (la API rechaza asignar inactivas)
-  document.getElementById("producto-categoria").innerHTML = '<option value="">— Selecciona —</option>' +
-    opcionesHtml(categorias.filter(c => c.estado), c => c.nombre);
-  document.getElementById("producto-unidad").innerHTML = '<option value="">— Selecciona —</option>' +
-    opcionesHtml(unidades.filter(u => u.estado), textoUnidad);
-  document.getElementById("producto-proveedor").innerHTML = '<option value="">— Sin proveedor —</option>' +
-    opcionesHtml(proveedores.filter(p => p.estado === "ACTIVO"), p => p.razonSocial);
-
-  // Filtros: todas, porque puede haber productos asociados a relaciones ya inactivas
-  const filtroCat = document.getElementById("filtro-categoria");
-  const filtroProv = document.getElementById("filtro-proveedor");
-  const catElegida = filtroCat.value, provElegido = filtroProv.value;
-  filtroCat.innerHTML = '<option value="">Todas las categorías</option>' + opcionesHtml(categorias, c => c.nombre);
-  filtroProv.innerHTML = '<option value="">Todos los proveedores</option>' + opcionesHtml(proveedores, p => p.razonSocial);
-  filtroCat.value = catElegida;
-  filtroProv.value = provElegido;
+function conRetraso(fn, ms = 250) {
+  let t;
+  return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
 }
 
-// Al editar, la relación actual puede estar inactiva y no figurar en el select:
-// se agrega como opción temporal para no cambiarla sin querer.
-function seleccionarRelacion(selectId, relacion, texto) {
-  const sel = document.getElementById(selectId);
-  sel.querySelectorAll("option[data-temporal]").forEach(o => o.remove());
-  if (!relacion) { sel.value = ""; return; }
-  const id = String(relacion.id);
-  if (![...sel.options].some(o => o.value === id)) {
-    const opt = document.createElement("option");
-    opt.value = id;
-    opt.textContent = `${texto} (inactivo)`;
-    opt.dataset.temporal = "true";
-    sel.appendChild(opt);
-  }
-  sel.value = id;
+function contar(n, singular, plural) {
+  return `${n} ${n === 1 ? singular : plural}`;
 }
 
-function limpiarFormProducto() {
-  document.getElementById("form-producto").reset();
-  document.getElementById("producto-id").value = "";
-  document.querySelectorAll("#form-producto option[data-temporal]").forEach(o => o.remove());
-  document.getElementById("producto-form-title").textContent = "Registrar producto";
-  document.getElementById("producto-submit-btn").textContent = "Guardar";
-  document.getElementById("producto-cancel-btn").style.display = "none";
+// "15 productos" sin filtros; "3 resultados" con filtros
+function textoContador(n, filtrado, singular, plural) {
+  return filtrado ? contar(n, "resultado", "resultados") : contar(n, singular, plural);
 }
 
-// "activo" no se envía: al registrar siempre es true y el PUT lo ignora (usar Activar/Desactivar)
-function productoDesdeForm() {
-  const catId = document.getElementById("producto-categoria").value;
-  const uniId = document.getElementById("producto-unidad").value;
-  const provId = document.getElementById("producto-proveedor").value;
-  return {
-    nombre: document.getElementById("producto-nombre").value,
-    tipoProducto: document.getElementById("producto-tipo").value,
-    descripcion: document.getElementById("producto-descripcion").value || null,
-    marca: document.getElementById("producto-marca").value || null,
-    fabricante: document.getElementById("producto-fabricante").value || null,
-    codigo: document.getElementById("producto-codigo").value || null,
-    codigoBarras: document.getElementById("producto-codigoBarras").value || null,
-    stockMinimo: numOrNull("producto-stockMinimo"),
-    stockMaximo: numOrNull("producto-stockMaximo"),
-    puntoReposicion: numOrNull("producto-puntoReposicion"),
-    manejaLote: document.getElementById("producto-manejaLote").checked,
-    manejaVencimiento: document.getElementById("producto-manejaVencimiento").checked,
-    categoria: catId ? { id: Number(catId) } : null,
-    unidadMedida: uniId ? { id: Number(uniId) } : null,
-    proveedor: provId ? { id: Number(provId) } : null
-  };
+function valorTexto(id) {
+  const v = $(id).value.trim();
+  return v === "" ? null : v;
 }
 
-function numOrNull(id) {
-  const v = document.getElementById(id).value;
+function valorNumero(id) {
+  const v = $(id).value;
   return v === "" ? null : Number(v);
 }
 
-// Incluye el detalle por campo que devuelve la API en los errores de validación
-function mensajeErrorProducto(err) {
-  return err.errores ? `${err.message}: ${Object.values(err.errores).join("; ")}` : err.message;
+// ---------- avisos ----------
+function avisar(mensaje, tipo = "info") {
+  const el = document.createElement("div");
+  el.className = `toast ${tipo}`;
+  if (tipo === "error") el.setAttribute("role", "alert");
+  el.innerHTML = `<span class="toast-icono">${ICONOS[tipo] || ICONOS.info}</span><span></span>`;
+  el.lastElementChild.textContent = mensaje;
+  $("avisos").appendChild(el);
+  setTimeout(() => el.remove(), tipo === "error" ? 6000 : 3500);
 }
 
-document.getElementById("form-producto").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const id = document.getElementById("producto-id").value;
-  const payload = productoDesdeForm();
-  try {
-    if (id) {
-      await apiFetch(`/productos/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-      toast("Producto actualizado", "success");
-    } else {
-      await apiFetch("/productos", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-      toast("Producto registrado", "success");
-    }
-    limpiarFormProducto();
-    cargarProductos();
-  } catch (err) {
-    toast(mensajeErrorProducto(err), "error");
-  }
-});
-
-document.getElementById("producto-cancel-btn").addEventListener("click", limpiarFormProducto);
-
-function editarProducto(p) {
-  document.getElementById("producto-id").value = p.id;
-  document.getElementById("producto-nombre").value = p.nombre || "";
-  document.getElementById("producto-tipo").value = p.tipoProducto || "";
-  document.getElementById("producto-descripcion").value = p.descripcion || "";
-  document.getElementById("producto-marca").value = p.marca || "";
-  document.getElementById("producto-fabricante").value = p.fabricante || "";
-  document.getElementById("producto-codigo").value = p.codigo || "";
-  document.getElementById("producto-codigoBarras").value = p.codigoBarras || "";
-  seleccionarRelacion("producto-categoria", p.categoria, p.categoria && p.categoria.nombre);
-  seleccionarRelacion("producto-unidad", p.unidadMedida, p.unidadMedida && p.unidadMedida.nombre);
-  seleccionarRelacion("producto-proveedor", p.proveedor, p.proveedor && p.proveedor.razonSocial);
-  document.getElementById("producto-stockMinimo").value = p.stockMinimo ?? "";
-  document.getElementById("producto-stockMaximo").value = p.stockMaximo ?? "";
-  document.getElementById("producto-puntoReposicion").value = p.puntoReposicion ?? "";
-  document.getElementById("producto-manejaLote").checked = !!p.manejaLote;
-  document.getElementById("producto-manejaVencimiento").checked = !!p.manejaVencimiento;
-  document.getElementById("producto-form-title").textContent = `Editando producto #${p.id}`;
-  document.getElementById("producto-submit-btn").textContent = "Actualizar";
-  document.getElementById("producto-cancel-btn").style.display = "inline-block";
-  window.scrollTo({ top: 0, behavior: "smooth" });
-}
-
-// RF-INV-03
-async function cambiarEstadoProducto(id, accion) {
-  try {
-    const p = await apiFetch(`/productos/${id}/${accion}`, { method: "PATCH" });
-    toast(`Producto "${p.nombre}" ${accion === "activar" ? "activado" : "desactivado"}`, "success");
-    cargarProductos();
-  } catch (err) {
-    toast(mensajeErrorProducto(err), "error");
-  }
-}
-
-function renderProductos(lista) {
-  const tbody = document.getElementById("productos-tbody");
-  productosPorId.clear();
-  lista.forEach(p => productosPorId.set(String(p.id), p));
-  if (!lista.length) {
-    tbody.innerHTML = `<tr class="empty-row"><td colspan="11">Sin productos que mostrar</td></tr>`;
-    return;
-  }
-  tbody.innerHTML = lista.map(p => `
-    <tr>
-      <td>${Number(p.id)}</td>
-      <td>${esc(p.nombre)}</td>
-      <td>${esc(p.tipoProducto)}</td>
-      <td>${p.categoria ? esc(p.categoria.nombre) : "—"}</td>
-      <td>${p.unidadMedida ? esc(p.unidadMedida.abreviatura) : "—"}</td>
-      <td>${p.proveedor ? esc(p.proveedor.razonSocial) : "—"}</td>
-      <td>${esc(p.stockMinimo ?? "-")} / ${esc(p.stockMaximo ?? "-")} / ${esc(p.puntoReposicion ?? "-")}</td>
-      <td>${p.manejaLote ? "Sí" : "No"}</td>
-      <td>${p.manejaVencimiento ? "Sí" : "No"}</td>
-      <td><span class="badge ${p.activo ? "on" : "off"}">${p.activo ? "Activo" : "Inactivo"}</span></td>
-      <td class="col-acciones"><div class="actions-cell">
-        ${esAdmin() ? `
-        <button class="action secondary" data-accion="editar" data-id="${Number(p.id)}">Editar</button>
-        ${p.activo
-          ? `<button class="action danger" data-accion="desactivar" data-id="${Number(p.id)}">Desactivar</button>`
-          : `<button class="action" data-accion="activar" data-id="${Number(p.id)}">Activar</button>`}
-        ` : "—"}
-      </div></td>
-    </tr>
-  `).join("");
-}
-
-document.getElementById("productos-tbody").addEventListener("click", (e) => {
-  const btn = e.target.closest("button[data-accion]");
-  if (!btn) return;
-  const id = btn.dataset.id;
-  if (btn.dataset.accion === "editar") {
-    const p = productosPorId.get(id);
-    if (p) editarProducto(p);
-  } else {
-    cambiarEstadoProducto(id, btn.dataset.accion);
-  }
-});
-
-// RF-INV-14: todos los filtros se combinan en una sola consulta.
-// Se usa también para recargar la tabla respetando los filtros elegidos.
-async function cargarProductos() {
-  const filtros = {
-    nombre: document.getElementById("filtro-nombre").value.trim(),
-    tipo: document.getElementById("filtro-tipo").value.trim(),
-    activo: document.getElementById("filtro-estado").value,
-    categoriaId: document.getElementById("filtro-categoria").value,
-    proveedorId: document.getElementById("filtro-proveedor").value
-  };
-  const params = new URLSearchParams();
-  Object.entries(filtros).forEach(([k, v]) => { if (v) params.append(k, v); });
-  const query = params.toString();
-  try {
-    renderProductos(await apiFetch("/productos" + (query ? "?" + query : "")));
-  } catch (err) {
-    toast(mensajeErrorProducto(err), "error");
-  }
-}
-
-document.getElementById("btn-filtrar").addEventListener("click", cargarProductos);
-
-document.getElementById("btn-limpiar-filtro").addEventListener("click", () => {
-  ["filtro-nombre", "filtro-tipo", "filtro-estado", "filtro-categoria", "filtro-proveedor"]
-    .forEach(id => { document.getElementById(id).value = ""; });
-  cargarProductos();
-});
-
-// ======================================================
-// CATEGORIAS
-// ======================================================
-function limpiarFormCategoria() {
-  document.getElementById("form-categoria").reset();
-  document.getElementById("categoria-id").value = "";
-  document.getElementById("categoria-estado").checked = true;
-  document.getElementById("categoria-form-title").textContent = "Registrar categoría";
-  document.getElementById("categoria-cancel-btn").style.display = "none";
-}
-
-document.getElementById("form-categoria").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const id = document.getElementById("categoria-id").value;
-  const payload = {
-    nombre: document.getElementById("categoria-nombre").value,
-    descripcion: document.getElementById("categoria-descripcion").value || null,
-    estado: document.getElementById("categoria-estado").checked
-  };
-  try {
-    if (id) {
-      await apiFetch(`/categorias/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-      toast("Categoría actualizada", "success");
-    } else {
-      await apiFetch("/categorias", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-      toast("Categoría registrada", "success");
-    }
-    limpiarFormCategoria();
-    cargarCategorias();
-    cargarSelectsProducto();
-  } catch (err) {
-    toast(err.message, "error");
-  }
-});
-
-document.getElementById("categoria-cancel-btn").addEventListener("click", limpiarFormCategoria);
-
-function editarCategoria(c) {
-  document.getElementById("categoria-id").value = c.id;
-  document.getElementById("categoria-nombre").value = c.nombre || "";
-  document.getElementById("categoria-descripcion").value = c.descripcion || "";
-  document.getElementById("categoria-estado").checked = !!c.estado;
-  document.getElementById("categoria-form-title").textContent = `Editando categoría #${c.id}`;
-  document.getElementById("categoria-cancel-btn").style.display = "inline-block";
-}
-
-async function cargarCategorias() {
-  try {
-    const data = await apiFetch("/categorias");
-    const tbody = document.getElementById("categorias-tbody");
-    tbody.innerHTML = data.length ? data.map(c => `
-      <tr>
-        <td>${c.id}</td>
-        <td>${esc(c.nombre)}</td>
-        <td>${esc(c.descripcion)}</td>
-        <td><span class="badge ${c.estado ? "on" : "off"}">${c.estado ? "Activa" : "Inactiva"}</span></td>
-        <td>${esAdmin() ? `<button class="action secondary" onclick='editarCategoria(${JSON.stringify(c)})'>Editar</button>` : "—"}</td>
-      </tr>
-    `).join("") : `<tr class="empty-row"><td colspan="5">Sin categorías registradas</td></tr>`;
-  } catch (err) {
-    toast(err.message, "error");
-  }
-}
-
-// ======================================================
-// UNIDADES DE MEDIDA
-// ======================================================
-document.getElementById("form-unidad").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const payload = {
-    nombre: document.getElementById("unidad-nombre").value,
-    abreviatura: document.getElementById("unidad-abreviatura").value
-  };
-  try {
-    await apiFetch("/unidades-medida", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-    toast("Unidad de medida registrada", "success");
-    document.getElementById("form-unidad").reset();
-    cargarUnidades();
-    cargarSelectsProducto();
-  } catch (err) {
-    toast(err.message, "error");
-  }
-});
-
-async function cargarUnidades() {
-  try {
-    const data = await apiFetch("/unidades-medida");
-    const tbody = document.getElementById("unidades-tbody");
-    tbody.innerHTML = data.length ? data.map(u => `
-      <tr>
-        <td>${u.id}</td>
-        <td>${esc(u.nombre)}</td>
-        <td>${esc(u.abreviatura)}</td>
-        <td><span class="badge ${u.estado ? "on" : "off"}">${u.estado ? "Activa" : "Inactiva"}</span></td>
-      </tr>
-    `).join("") : `<tr class="empty-row"><td colspan="4">Sin unidades registradas</td></tr>`;
-  } catch (err) {
-    toast(err.message, "error");
-  }
-}
-
-// ======================================================
-// PROVEEDORES
-// ======================================================
-function limpiarFormProveedor() {
-  document.getElementById("form-proveedor").reset();
-  document.getElementById("proveedor-id").value = "";
-  document.getElementById("proveedor-form-title").textContent = "Registrar proveedor";
-  document.getElementById("proveedor-cancel-btn").style.display = "none";
-}
-
-document.getElementById("form-proveedor").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const id = document.getElementById("proveedor-id").value;
-  const payload = {
-    ruc: document.getElementById("proveedor-ruc").value,
-    razonSocial: document.getElementById("proveedor-razonSocial").value,
-    contacto: document.getElementById("proveedor-contacto").value || null,
-    telefono: document.getElementById("proveedor-telefono").value || null,
-    email: document.getElementById("proveedor-email").value || null,
-    direccion: document.getElementById("proveedor-direccion").value || null,
-    estado: document.getElementById("proveedor-estado").value
-  };
-  try {
-    if (id) {
-      await apiFetch(`/proveedores/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-      toast("Proveedor actualizado", "success");
-    } else {
-      await apiFetch("/proveedores", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-      toast("Proveedor registrado", "success");
-    }
-    limpiarFormProveedor();
-    cargarProveedores();
-    cargarSelectsProducto();
-  } catch (err) {
-    toast(err.message, "error");
-  }
-});
-
-document.getElementById("proveedor-cancel-btn").addEventListener("click", limpiarFormProveedor);
-
-function editarProveedor(p) {
-  document.getElementById("proveedor-id").value = p.id;
-  document.getElementById("proveedor-ruc").value = p.ruc || "";
-  document.getElementById("proveedor-razonSocial").value = p.razonSocial || "";
-  document.getElementById("proveedor-contacto").value = p.contacto || "";
-  document.getElementById("proveedor-telefono").value = p.telefono || "";
-  document.getElementById("proveedor-email").value = p.email || "";
-  document.getElementById("proveedor-direccion").value = p.direccion || "";
-  document.getElementById("proveedor-estado").value = p.estado || "ACTIVO";
-  document.getElementById("proveedor-form-title").textContent = `Editando proveedor #${p.id}`;
-  document.getElementById("proveedor-cancel-btn").style.display = "inline-block";
-}
-
-async function cargarProveedores() {
-  try {
-    const data = await apiFetch("/proveedores");
-    const tbody = document.getElementById("proveedores-tbody");
-    tbody.innerHTML = data.length ? data.map(p => `
-      <tr>
-        <td>${p.id}</td>
-        <td>${esc(p.ruc)}</td>
-        <td>${esc(p.razonSocial)}</td>
-        <td>${esc(p.contacto)}</td>
-        <td>${esc(p.telefono)}</td>
-        <td><span class="badge ${p.estado === "ACTIVO" ? "on" : "off"}">${esc(p.estado)}</span></td>
-        <td>${esAdmin() ? `<button class="action secondary" onclick='editarProveedor(${JSON.stringify(p)})'>Editar</button>` : "—"}</td>
-      </tr>
-    `).join("") : `<tr class="empty-row"><td colspan="7">Sin proveedores registrados</td></tr>`;
-  } catch (err) {
-    toast(err.message, "error");
-  }
-}
-
-// ======================================================
-// AUDITORÍA (P2) - solo lectura
-// ======================================================
-let paginaAuditoria = 0;
-
-// "2026-10-06T22:03:47" -> "06/10/2026 22:03:47" (sin pasar por Date para no mover la zona horaria)
-function formatearFechaHora(valor) {
-  if (!valor) return "";
-  const [fecha, hora = ""] = String(valor).split("T");
-  const [a, m, d] = fecha.split("-");
-  return `${d}/${m}/${a} ${hora.substring(0, 8)}`;
-}
-
-const CLASES_OPERACION = {
-  REGISTRAR: "op-registrar",
-  MODIFICAR: "op-modificar",
-  ACTIVAR: "on",
-  DESACTIVAR: "off"
-};
-
-async function cargarAuditoria() {
-  const filtros = {
-    entidad: document.getElementById("aud-entidad").value,
-    operacion: document.getElementById("aud-operacion").value,
-    usuario: document.getElementById("aud-usuario").value.trim(),
-    desde: document.getElementById("aud-desde").value,
-    hasta: document.getElementById("aud-hasta").value
-  };
-  const params = new URLSearchParams();
-  Object.entries(filtros).forEach(([k, v]) => { if (v) params.append(k, v); });
-  params.append("pagina", paginaAuditoria);
-
-  try {
-    renderAuditoria(await apiFetch("/auditoria?" + params.toString()));
-  } catch (err) {
-    toast(err.message, "error");
-  }
-}
-
-function renderAuditoria(pagina) {
-  const tbody = document.getElementById("auditoria-tbody");
-  tbody.innerHTML = pagina.contenido.length ? pagina.contenido.map(a => `
-    <tr>
-      <td>${esc(formatearFechaHora(a.fechaHora))}</td>
-      <td>${esc(a.usuario)}</td>
-      <td><span class="badge ${CLASES_OPERACION[a.operacion] || ""}">${esc(a.operacion)}</span></td>
-      <td>${esc(a.entidad)}</td>
-      <td>${esc(a.registroId ?? "—")}</td>
-      <td>${esc(a.detalle ?? "")}</td>
-    </tr>
-  `).join("") : `<tr class="empty-row"><td colspan="6">Sin registros de auditoría</td></tr>`;
-
-  const totalPaginas = Math.max(pagina.totalPaginas, 1);
-  document.getElementById("aud-info").textContent =
-    `Página ${pagina.pagina + 1} de ${totalPaginas} · ${pagina.total} registro${pagina.total === 1 ? "" : "s"}`;
-  document.getElementById("aud-anterior").disabled = pagina.pagina <= 0;
-  document.getElementById("aud-siguiente").disabled = pagina.pagina + 1 >= totalPaginas;
-}
-
-document.getElementById("btn-aud-filtrar").addEventListener("click", () => {
-  paginaAuditoria = 0;
-  cargarAuditoria();
-});
-
-document.getElementById("btn-aud-limpiar").addEventListener("click", () => {
-  ["aud-entidad", "aud-operacion", "aud-usuario", "aud-desde", "aud-hasta"]
-    .forEach(id => { document.getElementById(id).value = ""; });
-  paginaAuditoria = 0;
-  cargarAuditoria();
-});
-
-document.getElementById("aud-anterior").addEventListener("click", () => {
-  if (paginaAuditoria > 0) { paginaAuditoria--; cargarAuditoria(); }
-});
-
-document.getElementById("aud-siguiente").addEventListener("click", () => {
-  paginaAuditoria++;
-  cargarAuditoria();
-});
-
-// Se recarga cada vez que se abre la pestaña, para ver las operaciones recién hechas
-document.querySelector('.tab-btn[data-tab="auditoria"]').addEventListener("click", cargarAuditoria);
-
-// ======================================================
-// SESION Y PERMISOS
-// ======================================================
-let rolActual = null;
-
-function esAdmin() {
-  return rolActual === "ADMINISTRADOR";
-}
-
-async function cargarSesion() {
-  const sesion = await apiFetch("/sesion");
-  rolActual = sesion.rol;
-  document.getElementById("sesion-info").textContent =
-    `${sesion.nombre} (${sesion.username}) · ${sesion.rol}`;
-
-  const admin = esAdmin();
-  document.querySelectorAll(".solo-admin").forEach(el => {
-    el.style.display = admin ? "" : "none";
+// ---------- confirmación ----------
+function confirmar({ titulo, mensaje, aceptar = "Aceptar", peligro = false }) {
+  const dialogo = $("modal-confirmar");
+  $("confirmar-titulo").textContent = titulo;
+  $("confirmar-mensaje").textContent = mensaje;
+  const btn = $("confirmar-aceptar");
+  btn.textContent = aceptar;
+  btn.className = "btn " + (peligro ? "btn-peligro" : "btn-principal");
+  return new Promise(resolve => {
+    dialogo.returnValue = "";
+    dialogo.addEventListener("close", () => resolve(dialogo.returnValue === "si"), { once: true });
+    dialogo.showModal();
+    $("confirmar-cancelar").focus();
   });
 }
 
-// ---------- init ----------
+// ---------- panel lateral ----------
+// Es un <dialog> modal: atrapa el foco, Esc lo cierra y al cerrarse devuelve el foco al botón que lo abrió.
+const menosMovimiento = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+function abrirPanel(panel) {
+  panel.classList.remove("cerrando");
+  panel.showModal();
+  const primero = panel.querySelector(".panel-cuerpo input:not([type=hidden]), .panel-cuerpo select, .panel-cuerpo textarea");
+  if (primero) primero.focus();
+}
+
+function cerrarPanel(panel) {
+  if (!panel.open || panel.classList.contains("cerrando")) return;
+  if (menosMovimiento.matches) { panel.close(); return; }
+  let listo = false;
+  const terminar = () => {
+    if (listo) return;
+    listo = true;
+    panel.classList.remove("cerrando");
+    panel.close();
+  };
+  panel.classList.add("cerrando");
+  panel.addEventListener("animationend", terminar, { once: true });
+  setTimeout(terminar, 300);
+}
+
+document.querySelectorAll("dialog.panel-lateral").forEach(panel => {
+  panel.addEventListener("cancel", e => { e.preventDefault(); cerrarPanel(panel); });
+  panel.querySelectorAll("[data-cerrar-panel]").forEach(b => b.addEventListener("click", () => cerrarPanel(panel)));
+});
+
+// ---------- validación de formularios ----------
+// Mismas reglas que antes (required, maxlength, min) pero con el error debajo de cada campo.
+function prepararCampos(form) {
+  form.querySelectorAll(".campo").forEach(campo => {
+    const control = campo.querySelector("input, select, textarea");
+    if (!control || campo.querySelector(".error-campo")) return;
+    const error = document.createElement("div");
+    error.className = "error-campo";
+    error.id = control.id + "-error";
+    error.hidden = true;
+    campo.appendChild(error);
+    control.setAttribute("aria-describedby", error.id);
+    const limpiar = () => { if (control.getAttribute("aria-invalid")) marcarError(control, ""); };
+    control.addEventListener("input", limpiar);
+    control.addEventListener("change", limpiar);
+  });
+}
+
+function marcarError(control, mensaje) {
+  const error = $(control.id + "-error");
+  if (mensaje) control.setAttribute("aria-invalid", "true");
+  else control.removeAttribute("aria-invalid");
+  if (error) { error.textContent = mensaje; error.hidden = !mensaje; }
+}
+
+function mensajeValidacion(control) {
+  const v = control.validity;
+  if (v.valueMissing) return "Este campo es obligatorio.";
+  if (v.typeMismatch) return control.type === "email" ? "Ingresa un correo válido, por ejemplo nombre@dominio.com." : "El formato no es válido.";
+  if (v.badInput) return "Ingresa un número válido.";
+  if (v.rangeUnderflow) return `Debe ser mayor o igual a ${control.min}.`;
+  if (v.stepMismatch) return "Ingresa un número entero.";
+  if (v.tooLong) return `Máximo ${control.maxLength} caracteres.`;
+  return control.validationMessage;
+}
+
+function alertaDe(form) {
+  return form.querySelector(".alerta.error");
+}
+
+function limpiarErrores(form) {
+  form.querySelectorAll("[aria-invalid]").forEach(c => marcarError(c, ""));
+  const alerta = alertaDe(form);
+  if (alerta) { alerta.hidden = true; alerta.textContent = ""; }
+}
+
+function validarFormulario(form) {
+  limpiarErrores(form);
+  let primero = null;
+  form.querySelectorAll(".campo input, .campo select, .campo textarea").forEach(control => {
+    if (control.checkValidity()) return;
+    marcarError(control, mensajeValidacion(control));
+    primero = primero || control;
+  });
+  if (primero) primero.focus();
+  return !primero;
+}
+
+// Errores de la API: los de validación van debajo de su campo; los de negocio (stock incoherente,
+// código duplicado, etc.) en la alerta de arriba del formulario.
+function mostrarErrorApi(form, err, campos) {
+  const alerta = alertaDe(form);
+  let primero = null;
+  const sinCampo = [];
+  Object.entries(err.errores || {}).forEach(([clave, mensaje]) => {
+    const control = $(campos[clave.split(".")[0]] || "");
+    if (control) {
+      marcarError(control, mensaje);
+      primero = primero || control;
+    } else {
+      sinCampo.push(mensaje);
+    }
+  });
+  const textoAlerta = primero
+    ? ["Revisa los campos marcados.", ...sinCampo].join(" ")
+    : [err.message, ...sinCampo].join(": ");
+  alerta.textContent = textoAlerta;
+  alerta.hidden = false;
+  (primero || alerta).focus();
+  if (!primero) alerta.scrollIntoView({ block: "nearest" });
+}
+
+// ---------- estados de las tablas ----------
+function filasEsqueleto(tbody, columnas, filas = 5) {
+  tbody.closest("table").setAttribute("aria-busy", "true");
+  const fila = `<tr class="esqueleto" aria-hidden="true">${
+    Array.from({ length: columnas }, (_, i) =>
+      `<td><span style="width:${55 + (i * 17) % 40}%"></span>${i === 0 ? '<span class="corto"></span>' : ""}</td>`
+    ).join("")}</tr>`;
+  tbody.innerHTML = fila.repeat(filas);
+}
+
+function filaVacia(tbody, columnas, titulo, texto, botonHtml = "") {
+  tbody.closest("table").removeAttribute("aria-busy");
+  tbody.innerHTML = `<tr class="vacio"><td colspan="${columnas}"><div class="vacio-contenido">
+    <strong>${esc(titulo)}</strong><span>${esc(texto)}</span>${botonHtml ? `<div>${botonHtml}</div>` : ""}
+  </div></td></tr>`;
+}
+
+function errorDeCarga(tbody, columnas, err, que) {
+  if (err.status === 403) {
+    filaVacia(tbody, columnas, "Sin acceso", `Tu rol no tiene permiso para consultar ${que}.`);
+  } else {
+    filaVacia(tbody, columnas, `No se pudieron cargar ${que}`, err.message);
+  }
+}
+
+const BOTON_LIMPIAR = '<button type="button" class="btn btn-secundario btn-sm" data-accion="limpiar">Limpiar filtros</button>';
+
+function etiquetaEstado(activo, femenino) {
+  const texto = activo ? (femenino ? "Activa" : "Activo") : (femenino ? "Inactiva" : "Inactivo");
+  return `<span class="etiqueta ${activo ? "activo" : "inactivo"}">${texto}</span>`;
+}
+
+function botonEditar(id, nombre) {
+  return `<button type="button" class="btn-icono" data-accion="editar" data-id="${Number(id)}"
+    aria-label="Editar ${esc(nombre)}" data-tooltip="Editar">${ICONOS.editar}</button>`;
+}
+
+function interruptorEstado(id, activo, nombre) {
+  return `<button type="button" class="interruptor" role="switch" aria-checked="${activo ? "true" : "false"}"
+    data-accion="estado" data-id="${Number(id)}" aria-label="Activo: ${esc(nombre)}"
+    data-tooltip="${activo ? "Desactivar" : "Activar"}"><span class="pista"></span></button>`;
+}
+
+// Tras recargar una tabla, devuelve el foco al interruptor que se acaba de usar
+function enfocarInterruptor(tbodyId, id) {
+  const btn = document.querySelector(`#${tbodyId} [data-accion="estado"][data-id="${Number(id)}"]`);
+  if (btn) btn.focus();
+}
+
+// ---------- sesión ----------
+let sesion = null;
+const NOMBRES_ROL = { ADMINISTRADOR: "Administrador", MEDICO: "Médico", RECEPCIONISTA: "Recepcionista" };
+
+function esAdmin() {
+  return !!sesion && sesion.rol === "ADMINISTRADOR";
+}
+
+function nombreRol(rol) {
+  if (!rol) return "";
+  return NOMBRES_ROL[rol] || rol.charAt(0) + rol.slice(1).toLowerCase();
+}
+
+async function cargarSesion() {
+  sesion = await apiFetch("/sesion");
+  $("sesion-nombre").textContent = sesion.nombre || sesion.username;
+  $("sesion-rol").textContent = `${sesion.username} · ${nombreRol(sesion.rol)}`;
+  document.querySelectorAll(".solo-admin").forEach(el => { el.hidden = !esAdmin(); });
+}
+
+// ---------- módulos y pestañas ----------
+// Cada pestaña se registra con: preparar() al iniciar, cargar() después de la sesión,
+// catalogoActualizado() cuando cambian categorías/unidades/proveedores y alMostrar() al abrirla.
+const modulos = [];
+function registrarModulo(modulo) { modulos.push(modulo); }
+
+function mostrarTab(nombre) {
+  let boton = document.querySelector(`.segmentado [data-tab="${nombre}"]`);
+  if (!boton || boton.hidden) {
+    nombre = "productos";
+    boton = document.querySelector('.segmentado [data-tab="productos"]');
+  }
+  document.querySelectorAll(".segmentado [data-tab]").forEach(b => {
+    if (b === boton) b.setAttribute("aria-current", "page");
+    else b.removeAttribute("aria-current");
+  });
+  boton.scrollIntoView({ block: "nearest", inline: "nearest" });
+  document.querySelectorAll("main .tab").forEach(s => { s.hidden = s.id !== nombre; });
+  if (location.hash !== "#" + nombre) history.replaceState(null, "", "#" + nombre);
+  const modulo = modulos.find(m => m.tab === nombre);
+  if (modulo && modulo.alMostrar) modulo.alMostrar();
+}
+
+document.querySelectorAll(".segmentado [data-tab]").forEach(btn => {
+  btn.addEventListener("click", () => {
+    mostrarTab(btn.dataset.tab);
+    window.scrollTo({ top: 0 });
+  });
+});
+document.querySelectorAll("[data-tab-enlace]").forEach(a => {
+  a.addEventListener("click", e => { e.preventDefault(); mostrarTab(a.dataset.tabEnlace); });
+});
+window.addEventListener("hashchange", () => mostrarTab(location.hash.slice(1)));
+
+// ---------- catálogo compartido ----------
+// Categorías, unidades y proveedores: los usan sus pestañas y los selects de productos.
+const catalogo = { categorias: [], unidades: [], proveedores: [], errores: {} };
+
+async function cargarCatalogo() {
+  const fuentes = { categorias: "/categorias", unidades: "/unidades-medida", proveedores: "/proveedores" };
+  await Promise.all(Object.entries(fuentes).map(async ([clave, ruta]) => {
+    try {
+      catalogo[clave] = await apiFetch(ruta);
+      delete catalogo.errores[clave];
+    } catch (err) {
+      catalogo[clave] = [];
+      catalogo.errores[clave] = err;
+    }
+  }));
+  modulos.forEach(m => m.catalogoActualizado && m.catalogoActualizado());
+}
+
+
+
+
+
+
+// ---------- inicio ----------
 (async function init() {
-  await cargarSesion();
-  await cargarSelectsProducto();
-  cargarProductos();
-  cargarCategorias();
-  cargarUnidades();
-  cargarProveedores();
+  try {
+    await cargarSesion();
+  } catch (err) {
+    avisar(err.message, "error");
+    return;
+  }
+  modulos.forEach(m => m.preparar && m.preparar());
+  mostrarTab(location.hash.slice(1) || "productos");
+  await cargarCatalogo();
+  modulos.forEach(m => m.cargar && m.cargar());
 })();
 </script>
 
