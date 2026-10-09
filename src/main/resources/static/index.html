@@ -44,6 +44,56 @@
 
 <main class="contenido">
 
+  <!-- #region productos -->
+  <section id="productos" class="tab" aria-labelledby="titulo-productos" hidden>
+    <div class="encabezado-seccion">
+      <div>
+        <h1 id="titulo-productos">Productos</h1>
+        <p>Catálogo de medicamentos, insumos y material médico del almacén.</p>
+      </div>
+    </div>
+
+    <div class="herramientas vidrio" role="search">
+      <label class="buscador">
+        <span class="sr-only">Buscar productos por nombre</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input type="search" id="filtro-nombre" placeholder="Buscar por nombre…" autocomplete="off">
+      </label>
+      <select class="filtro" id="filtro-tipo" aria-label="Filtrar por tipo"><option value="">Todos los tipos</option></select>
+      <select class="filtro" id="filtro-estado" aria-label="Filtrar por estado">
+        <option value="">Todos los estados</option>
+        <option value="true">Activos</option>
+        <option value="false">Inactivos</option>
+      </select>
+      <select class="filtro" id="filtro-categoria" aria-label="Filtrar por categoría"><option value="">Todas las categorías</option></select>
+      <select class="filtro" id="filtro-proveedor" aria-label="Filtrar por proveedor"><option value="">Todos los proveedores</option></select>
+      <button type="button" class="btn btn-texto" id="btn-limpiar-filtro" hidden>Limpiar filtros</button>
+      <span class="contador empuje" id="productos-contador" aria-live="polite"></span>
+      <button type="button" class="btn btn-principal solo-admin" id="btn-nuevo-producto" hidden>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        Nuevo producto
+      </button>
+    </div>
+
+    <div class="vidrio tabla-contenedor">
+      <table class="tabla">
+        <caption class="sr-only">Listado de productos</caption>
+        <thead>
+          <tr>
+            <th scope="col">Producto</th>
+            <th scope="col">Categoría y unidad</th>
+            <th scope="col">Proveedor</th>
+            <th scope="col">Stock</th>
+            <th scope="col">Control</th>
+            <th scope="col">Estado</th>
+            <th scope="col" class="acciones solo-admin" hidden>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="productos-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+  <!-- #endregion productos -->
 
 
 
@@ -51,6 +101,98 @@
 
 </main>
 
+<!-- #region productos -->
+<!-- Panel lateral: registrar / editar producto -->
+<dialog class="panel-lateral" id="panel-producto" aria-labelledby="panel-producto-titulo">
+  <form id="form-producto" novalidate>
+    <div class="panel-cabecera">
+      <div>
+        <h2 id="panel-producto-titulo">Nuevo producto</h2>
+        <p id="panel-producto-sub">Los campos marcados con * son obligatorios.</p>
+      </div>
+      <button type="button" class="btn-icono" data-cerrar-panel aria-label="Cerrar panel" data-tooltip="Cerrar (Esc)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="panel-cuerpo">
+      <div class="alerta error" role="alert" hidden></div>
+      <input type="hidden" id="producto-id">
+      <div class="rejilla-form">
+        <div class="campo completo">
+          <label for="producto-nombre">Nombre <span aria-hidden="true">*</span></label>
+          <input type="text" id="producto-nombre" required maxlength="150" autocomplete="off">
+        </div>
+        <div class="campo">
+          <label for="producto-tipo">Tipo de producto <span aria-hidden="true">*</span></label>
+          <input type="text" id="producto-tipo" required maxlength="100" list="tipos-producto" placeholder="Medicamento, Insumo…" autocomplete="off">
+          <datalist id="tipos-producto"></datalist>
+        </div>
+        <div class="campo">
+          <label for="producto-codigo">Código</label>
+          <input type="text" id="producto-codigo" maxlength="50" autocomplete="off">
+        </div>
+        <div class="campo">
+          <label for="producto-marca">Marca</label>
+          <input type="text" id="producto-marca" maxlength="100">
+        </div>
+        <div class="campo">
+          <label for="producto-fabricante">Fabricante</label>
+          <input type="text" id="producto-fabricante" maxlength="150">
+        </div>
+        <div class="campo completo">
+          <label for="producto-codigoBarras">Código de barras</label>
+          <input type="text" id="producto-codigoBarras" maxlength="100" inputmode="numeric" autocomplete="off">
+        </div>
+        <div class="campo completo">
+          <label for="producto-descripcion">Descripción</label>
+          <textarea id="producto-descripcion" maxlength="500" rows="2"></textarea>
+        </div>
+
+        <h3 class="grupo-titulo">Clasificación</h3>
+        <div class="campo">
+          <label for="producto-categoria">Categoría <span aria-hidden="true">*</span></label>
+          <select id="producto-categoria" required><option value="">Selecciona una categoría</option></select>
+        </div>
+        <div class="campo">
+          <label for="producto-unidad">Unidad de medida <span aria-hidden="true">*</span></label>
+          <select id="producto-unidad" required><option value="">Selecciona una unidad</option></select>
+        </div>
+        <div class="campo completo">
+          <label for="producto-proveedor">Proveedor</label>
+          <select id="producto-proveedor"><option value="">Sin proveedor</option></select>
+        </div>
+
+        <h3 class="grupo-titulo">Niveles de stock</h3>
+        <div class="completo rejilla-3">
+          <div class="campo">
+            <label for="producto-stockMinimo">Mínimo</label>
+            <input type="number" id="producto-stockMinimo" min="0" step="1" inputmode="numeric">
+          </div>
+          <div class="campo">
+            <label for="producto-puntoReposicion">Reposición</label>
+            <input type="number" id="producto-puntoReposicion" min="0" step="1" inputmode="numeric">
+          </div>
+          <div class="campo">
+            <label for="producto-stockMaximo">Máximo</label>
+            <input type="number" id="producto-stockMaximo" min="0" step="1" inputmode="numeric">
+          </div>
+        </div>
+        <p class="ayuda completo">Debe cumplirse: mínimo ≤ punto de reposición ≤ máximo.</p>
+
+        <h3 class="grupo-titulo">Control</h3>
+        <div class="completo casillas">
+          <label class="casilla"><input type="checkbox" id="producto-manejaLote"> Maneja lote</label>
+          <label class="casilla"><input type="checkbox" id="producto-manejaVencimiento"> Maneja vencimiento</label>
+        </div>
+      </div>
+    </div>
+    <div class="panel-pie">
+      <button type="submit" class="btn btn-principal" id="producto-guardar">Guardar</button>
+      <button type="button" class="btn btn-secundario" data-cerrar-panel>Cancelar</button>
+    </div>
+  </form>
+</dialog>
+<!-- #endregion productos -->
 
 
 
@@ -404,6 +546,288 @@ async function cargarCatalogo() {
   modulos.forEach(m => m.catalogoActualizado && m.catalogoActualizado());
 }
 
+// #region productos
+// ======================================================
+// PRODUCTOS
+// ======================================================
+// Productos del último listado, por id: los botones de la tabla solo llevan data-id
+// (nunca el objeto serializado en un onclick, que permitía inyectar JavaScript).
+const productosPorId = new Map();
+let consultaProductos = 0;
+const FILTROS_PRODUCTO = ["filtro-nombre", "filtro-tipo", "filtro-estado", "filtro-categoria", "filtro-proveedor"];
+const CAMPOS_PRODUCTO = {
+  nombre: "producto-nombre", tipoProducto: "producto-tipo", descripcion: "producto-descripcion",
+  marca: "producto-marca", fabricante: "producto-fabricante", codigo: "producto-codigo",
+  codigoBarras: "producto-codigoBarras", categoria: "producto-categoria", unidadMedida: "producto-unidad",
+  proveedor: "producto-proveedor", stockMinimo: "producto-stockMinimo",
+  puntoReposicion: "producto-puntoReposicion", stockMaximo: "producto-stockMaximo"
+};
+
+function columnasProductos() { return esAdmin() ? 7 : 6; }
+
+function opcionesHtml(lista, textoDe) {
+  return lista.map(x => `<option value="${Number(x.id)}">${esc(textoDe(x))}</option>`).join("");
+}
+
+function actualizarSelectsProducto() {
+  const { categorias, unidades, proveedores } = catalogo;
+  const textoUnidad = u => `${u.nombre} (${u.abreviatura})`;
+
+  // Formulario: solo relaciones activas (la API rechaza asignar inactivas)
+  $("producto-categoria").innerHTML = '<option value="">Selecciona una categoría</option>' +
+    opcionesHtml(categorias.filter(c => c.estado), c => c.nombre);
+  $("producto-unidad").innerHTML = '<option value="">Selecciona una unidad</option>' +
+    opcionesHtml(unidades.filter(u => u.estado), textoUnidad);
+  $("producto-proveedor").innerHTML = '<option value="">Sin proveedor</option>' +
+    opcionesHtml(proveedores.filter(p => p.estado === "ACTIVO"), p => p.razonSocial);
+
+  // Filtros: todas, porque puede haber productos asociados a relaciones ya inactivas
+  const filtroCat = $("filtro-categoria"), filtroProv = $("filtro-proveedor");
+  const catElegida = filtroCat.value, provElegido = filtroProv.value;
+  filtroCat.innerHTML = '<option value="">Todas las categorías</option>' + opcionesHtml(categorias, c => c.nombre);
+  filtroProv.innerHTML = '<option value="">Todos los proveedores</option>' + opcionesHtml(proveedores, p => p.razonSocial);
+  filtroCat.value = catElegida;
+  filtroProv.value = provElegido;
+}
+
+// Tipos distintos de los productos existentes: alimentan el filtro y las sugerencias del formulario
+async function cargarTiposProducto() {
+  try {
+    const todos = await apiFetch("/productos");
+    const tipos = [...new Set(todos.map(p => (p.tipoProducto || "").trim()).filter(Boolean))]
+      .sort((a, b) => a.localeCompare(b, "es"));
+    const filtro = $("filtro-tipo");
+    const elegido = filtro.value;
+    filtro.innerHTML = '<option value="">Todos los tipos</option>' +
+      tipos.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join("");
+    filtro.value = tipos.includes(elegido) ? elegido : "";
+    $("tipos-producto").innerHTML = tipos.map(t => `<option value="${esc(t)}"></option>`).join("");
+  } catch (err) {
+    // El listado ya muestra el error (por ejemplo, un rol sin permiso)
+  }
+}
+
+function hayFiltrosProducto() {
+  return FILTROS_PRODUCTO.some(id => $(id).value.trim() !== "");
+}
+
+// RF-INV-14: todos los filtros se combinan en una sola consulta.
+// Se usa también para recargar la tabla respetando los filtros elegidos.
+async function cargarProductos() {
+  const consulta = ++consultaProductos;
+  const filtros = {
+    nombre: $("filtro-nombre").value.trim(),
+    tipo: $("filtro-tipo").value,
+    activo: $("filtro-estado").value,
+    categoriaId: $("filtro-categoria").value,
+    proveedorId: $("filtro-proveedor").value
+  };
+  const params = new URLSearchParams();
+  Object.entries(filtros).forEach(([k, v]) => { if (v) params.append(k, v); });
+  const query = params.toString();
+  $("btn-limpiar-filtro").hidden = !hayFiltrosProducto();
+  const tbody = $("productos-tbody");
+  try {
+    const lista = await apiFetch("/productos" + (query ? "?" + query : ""));
+    if (consulta === consultaProductos) renderProductos(lista);
+  } catch (err) {
+    if (consulta !== consultaProductos) return;
+    $("productos-contador").textContent = "";
+    errorDeCarga(tbody, columnasProductos(), err, "los productos");
+  }
+}
+
+function textoStock(p) {
+  const v = x => esc(x ?? "—");
+  return `mín <b>${v(p.stockMinimo)}</b> · rep <b>${v(p.puntoReposicion)}</b> · máx <b>${v(p.stockMaximo)}</b>`;
+}
+
+function renderProductos(lista) {
+  const tbody = $("productos-tbody");
+  const columnas = columnasProductos();
+  const filtrado = hayFiltrosProducto();
+  productosPorId.clear();
+  lista.forEach(p => productosPorId.set(String(p.id), p));
+  tbody.closest("table").removeAttribute("aria-busy");
+  $("productos-contador").textContent = textoContador(lista.length, filtrado, "producto", "productos");
+
+  if (!lista.length) {
+    if (filtrado) {
+      filaVacia(tbody, columnas, "No hay productos que coincidan",
+        "Prueba con otro nombre o quita algunos filtros.", BOTON_LIMPIAR);
+    } else {
+      filaVacia(tbody, columnas, "Aún no hay productos registrados",
+        esAdmin() ? "Registra el primero con «Nuevo producto»." : "Cuando el almacén registre productos aparecerán aquí.");
+    }
+    return;
+  }
+
+  tbody.innerHTML = lista.map(p => {
+    const unidad = p.unidadMedida
+      ? `${esc(p.unidadMedida.nombre)} (${esc(p.unidadMedida.abreviatura)})`
+      : "Sin unidad";
+    const detalle = [p.codigo, p.tipoProducto].filter(Boolean).map(esc).join(" · ");
+    const control = [p.manejaLote && "Lote", p.manejaVencimiento && "Vencimiento"].filter(Boolean).join(" · ");
+    return `<tr class="${p.activo ? "" : "fila-inactiva"}">
+      <td class="principal-celda"><strong>${esc(p.nombre)}</strong><span class="sub">${detalle}</span></td>
+      <td data-label="Categoría"><div>${p.categoria ? esc(p.categoria.nombre) : '<span class="sin-dato">Sin categoría</span>'}<span class="sub">${unidad}</span></div></td>
+      <td data-label="Proveedor"><div>${p.proveedor ? esc(p.proveedor.razonSocial) : '<span class="sin-dato">Sin proveedor</span>'}</div></td>
+      <td data-label="Stock" class="stock"><span>${textoStock(p)}</span></td>
+      <td data-label="Control" class="nowrap">${control || '<span class="sin-dato">—</span>'}</td>
+      <td data-label="Estado">${etiquetaEstado(p.activo)}</td>
+      ${esAdmin() ? `<td class="acciones" data-label="Acciones"><div class="acciones-celda">
+        ${botonEditar(p.id, p.nombre)}${interruptorEstado(p.id, p.activo, p.nombre)}
+      </div></td>` : ""}
+    </tr>`;
+  }).join("");
+}
+
+function limpiarFiltrosProducto() {
+  FILTROS_PRODUCTO.forEach(id => { $(id).value = ""; });
+  cargarProductos();
+  $("filtro-nombre").focus();
+}
+
+// Al editar, la relación actual puede estar inactiva y no figurar en el select:
+// se agrega como opción temporal para no cambiarla sin querer.
+function seleccionarRelacion(selectId, relacion, texto) {
+  const sel = $(selectId);
+  sel.querySelectorAll("option[data-temporal]").forEach(o => o.remove());
+  if (!relacion) { sel.value = ""; return; }
+  const id = String(relacion.id);
+  if (![...sel.options].some(o => o.value === id)) {
+    const opt = document.createElement("option");
+    opt.value = id;
+    opt.textContent = `${texto} (inactivo)`;
+    opt.dataset.temporal = "true";
+    sel.appendChild(opt);
+  }
+  sel.value = id;
+}
+
+function abrirFormProducto(p) {
+  const form = $("form-producto");
+  form.reset();
+  limpiarErrores(form);
+  form.querySelectorAll("option[data-temporal]").forEach(o => o.remove());
+  $("producto-id").value = p ? p.id : "";
+  $("panel-producto-titulo").textContent = p ? "Editar producto" : "Nuevo producto";
+  $("panel-producto-sub").textContent = p ? p.nombre : "Los campos marcados con * son obligatorios.";
+  if (p) {
+    $("producto-nombre").value = p.nombre || "";
+    $("producto-tipo").value = p.tipoProducto || "";
+    $("producto-descripcion").value = p.descripcion || "";
+    $("producto-marca").value = p.marca || "";
+    $("producto-fabricante").value = p.fabricante || "";
+    $("producto-codigo").value = p.codigo || "";
+    $("producto-codigoBarras").value = p.codigoBarras || "";
+    seleccionarRelacion("producto-categoria", p.categoria, p.categoria && p.categoria.nombre);
+    seleccionarRelacion("producto-unidad", p.unidadMedida, p.unidadMedida && p.unidadMedida.nombre);
+    seleccionarRelacion("producto-proveedor", p.proveedor, p.proveedor && p.proveedor.razonSocial);
+    $("producto-stockMinimo").value = p.stockMinimo ?? "";
+    $("producto-puntoReposicion").value = p.puntoReposicion ?? "";
+    $("producto-stockMaximo").value = p.stockMaximo ?? "";
+    $("producto-manejaLote").checked = !!p.manejaLote;
+    $("producto-manejaVencimiento").checked = !!p.manejaVencimiento;
+  }
+  abrirPanel($("panel-producto"));
+}
+
+// "activo" no se envía: al registrar siempre es true y el PUT lo ignora (usar el interruptor)
+function productoDesdeForm() {
+  const catId = $("producto-categoria").value;
+  const uniId = $("producto-unidad").value;
+  const provId = $("producto-proveedor").value;
+  return {
+    nombre: $("producto-nombre").value.trim(),
+    tipoProducto: $("producto-tipo").value.trim(),
+    descripcion: valorTexto("producto-descripcion"),
+    marca: valorTexto("producto-marca"),
+    fabricante: valorTexto("producto-fabricante"),
+    codigo: valorTexto("producto-codigo"),
+    codigoBarras: valorTexto("producto-codigoBarras"),
+    stockMinimo: valorNumero("producto-stockMinimo"),
+    stockMaximo: valorNumero("producto-stockMaximo"),
+    puntoReposicion: valorNumero("producto-puntoReposicion"),
+    manejaLote: $("producto-manejaLote").checked,
+    manejaVencimiento: $("producto-manejaVencimiento").checked,
+    categoria: catId ? { id: Number(catId) } : null,
+    unidadMedida: uniId ? { id: Number(uniId) } : null,
+    proveedor: provId ? { id: Number(provId) } : null
+  };
+}
+
+$("form-producto").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const form = e.currentTarget;
+  if (!validarFormulario(form)) return;
+  const id = $("producto-id").value;
+  const boton = $("producto-guardar");
+  boton.disabled = true;
+  try {
+    const p = id
+      ? await enviarJson(`/productos/${id}`, "PUT", productoDesdeForm())
+      : await enviarJson("/productos", "POST", productoDesdeForm());
+    avisar(id ? `Se actualizó «${p.nombre}»` : `Se registró «${p.nombre}»`, "exito");
+    cerrarPanel($("panel-producto"));
+    cargarProductos();
+    cargarTiposProducto();
+  } catch (err) {
+    mostrarErrorApi(form, err, CAMPOS_PRODUCTO);
+  } finally {
+    boton.disabled = false;
+  }
+});
+
+// RF-INV-03: desactivar es la eliminación lógica, por eso pide confirmación
+async function cambiarEstadoProducto(p, boton) {
+  const accion = p.activo ? "desactivar" : "activar";
+  if (p.activo && !await confirmar({
+    titulo: "¿Desactivar este producto?",
+    mensaje: `«${p.nombre}» quedará inactivo y no se podrá usar en nuevas operaciones. Puedes volver a activarlo cuando quieras.`,
+    aceptar: "Desactivar"
+  })) return;
+  boton.disabled = true;
+  try {
+    const r = await apiFetch(`/productos/${p.id}/${accion}`, { method: "PATCH" });
+    avisar(`«${r.nombre}» ${accion === "activar" ? "se activó" : "se desactivó"}`, "exito");
+    await cargarProductos();
+    enfocarInterruptor("productos-tbody", p.id);
+  } catch (err) {
+    avisar(err.message, "error");
+    boton.disabled = false;
+  }
+}
+
+$("productos-tbody").addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-accion]");
+  if (!btn) return;
+  if (btn.dataset.accion === "limpiar") { limpiarFiltrosProducto(); return; }
+  const p = productosPorId.get(btn.dataset.id);
+  if (!p) return;
+  if (btn.dataset.accion === "editar") abrirFormProducto(p);
+  else if (btn.dataset.accion === "estado") cambiarEstadoProducto(p, btn);
+});
+
+$("filtro-nombre").addEventListener("input", conRetraso(cargarProductos));
+["filtro-tipo", "filtro-estado", "filtro-categoria", "filtro-proveedor"]
+  .forEach(id => $(id).addEventListener("change", cargarProductos));
+$("btn-limpiar-filtro").addEventListener("click", limpiarFiltrosProducto);
+$("btn-nuevo-producto").addEventListener("click", () => abrirFormProducto(null));
+
+registrarModulo({
+  tab: "productos",
+  preparar() {
+    prepararCampos($("form-producto"));
+    filasEsqueleto($("productos-tbody"), columnasProductos());
+  },
+  catalogoActualizado: actualizarSelectsProducto,
+  cargar() {
+    cargarProductos();
+    cargarTiposProducto();
+  }
+});
+// #endregion productos
 
 
 
