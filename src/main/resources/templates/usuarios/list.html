@@ -1,52 +1,88 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Usuarios</title>
+    <title>Usuarios · Inventario hospitalario</title>
     <th:block th:replace="~{fragments/layout :: estilos}"></th:block>
 </head>
 <body>
 
 <th:block th:replace="~{fragments/layout :: barra('usuarios')}"></th:block>
 
-<main>
-    <div class="card">
-        <h2>Usuarios</h2>
-
-        <div th:if="${error}" class="alerta error" th:text="${error}"></div>
-
-        <a sec:authorize="hasRole('ADMINISTRADOR')" th:href="@{/usuarios/nuevo}" class="action" style="margin-bottom:16px; display:inline-block;">Nuevo usuario</a>
-
-        <div style="overflow-x:auto">
-            <table>
-                <thead>
-                <tr><th>Nombre</th><th>Username</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr>
-                </thead>
-                <tbody>
-                <tr th:if="${#lists.isEmpty(usuarios)}">
-                    <td colspan="5" style="text-align:center; color: var(--muted);">Sin usuarios registrados</td>
-                </tr>
-                <tr th:each="usuario : ${usuarios}">
-                    <td th:text="${usuario.nombre}"></td>
-                    <td th:text="${usuario.username}"></td>
-                    <td th:text="${usuario.rol != null} ? ${usuario.rol.nombre} : '—'"></td>
-                    <td><span class="badge" th:classappend="${usuario.estado} ? 'on' : 'off'" th:text="${usuario.estado} ? 'Activo' : 'Inactivo'"></span></td>
-                    <td>
-                        <div class="actions-cell">
-                            <a th:href="@{/usuarios/editar/{id}(id=${usuario.id})}" class="action secondary">Editar</a>
-                            <form th:action="@{/usuarios/estado/{id}(id=${usuario.id})}" method="post" style="display:inline">
-                                <button type="submit" class="action danger">Activar/Desactivar</button>
-                            </form>
-                        </div>
-                    </td>
-                </tr>
-                </tbody>
-            </table>
+<main class="contenido">
+    <div class="encabezado-seccion">
+        <div>
+            <h1>Usuarios</h1>
+            <p>Personas con acceso al sistema y el rol que determina qué pueden hacer.</p>
         </div>
+    </div>
+
+    <div th:if="${error}" class="alerta error" role="alert" th:text="${error}"></div>
+
+    <div class="herramientas vidrio">
+        <span class="contador" th:text="${#lists.size(usuarios)} + (${#lists.size(usuarios) == 1} ? ' usuario' : ' usuarios')">0 usuarios</span>
+        <a sec:authorize="hasRole('ADMINISTRADOR')" th:href="@{/usuarios/nuevo}" class="btn btn-principal empuje">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+            Nuevo usuario
+        </a>
+    </div>
+
+    <div class="vidrio tabla-contenedor">
+        <table class="tabla">
+            <caption class="sr-only">Listado de usuarios</caption>
+            <thead>
+            <tr>
+                <th scope="col">Usuario</th>
+                <th scope="col">Rol</th>
+                <th scope="col">Estado</th>
+                <th scope="col" class="acciones">Acciones</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr class="vacio" th:if="${#lists.isEmpty(usuarios)}">
+                <td colspan="4"><div class="vacio-contenido">
+                    <strong>Aún no hay usuarios</strong><span>Crea el primero con «Nuevo usuario».</span>
+                </div></td>
+            </tr>
+            <tr th:each="usuario : ${usuarios}" th:classappend="${usuario.estado} ? '' : 'fila-inactiva'">
+                <td class="principal-celda">
+                    <strong th:text="${usuario.nombre}">Nombre</strong>
+                    <span class="sub" th:text="${usuario.username}">usuario</span>
+                </td>
+                <td data-label="Rol"
+                    th:with="rol=${usuario.rol != null} ? ${usuario.rol.nombre} : null"
+                    th:text="${rol == null} ? '—' : (${rol == 'MEDICO'} ? 'Médico' : ${#strings.capitalize(#strings.toLowerCase(rol))})">Rol</td>
+                <td data-label="Estado">
+                    <span class="etiqueta" th:classappend="${usuario.estado} ? 'activo' : 'inactivo'"
+                          th:text="${usuario.estado} ? 'Activo' : 'Inactivo'">Activo</span>
+                </td>
+                <td class="acciones" data-label="Acciones">
+                    <div class="acciones-celda">
+                        <a th:href="@{/usuarios/editar/{id}(id=${usuario.id})}" class="btn-icono"
+                           th:attr="aria-label='Editar ' + ${usuario.nombre}" data-tooltip="Editar">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                        </a>
+                        <form th:action="@{/usuarios/estado/{id}(id=${usuario.id})}" method="post"
+                              th:attr="data-confirmar=${usuario.estado} ? '¿Desactivar este usuario?' : null,
+                                       data-mensaje=${usuario.estado} ? '«' + ${usuario.nombre} + '» no podrá iniciar sesión hasta que vuelvas a activarlo.' : null,
+                                       data-aceptar=${usuario.estado} ? 'Desactivar' : null">
+                            <button type="submit" class="interruptor" role="switch"
+                                    th:attr="aria-checked=${usuario.estado} ? 'true' : 'false',
+                                             aria-label='Activo: ' + ${usuario.nombre},
+                                             data-tooltip=${usuario.estado} ? 'Desactivar' : 'Activar'">
+                                <span class="pista"></span>
+                            </button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            </tbody>
+        </table>
     </div>
 </main>
 
+<th:block th:replace="~{fragments/layout :: confirmacion}"></th:block>
 </body>
 </html>

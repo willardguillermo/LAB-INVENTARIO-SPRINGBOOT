@@ -1,65 +1,74 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="${usuario.id} != null ? 'Editar usuario' : 'Nuevo usuario'">Formulario de Usuario</title>
+    <title th:text="(${usuario.id} != null ? 'Editar usuario' : 'Nuevo usuario') + ' · Inventario hospitalario'">Usuario · Inventario hospitalario</title>
     <th:block th:replace="~{fragments/layout :: estilos}"></th:block>
 </head>
 <body>
 
 <th:block th:replace="~{fragments/layout :: barra('usuarios')}"></th:block>
 
-<main>
-    <div class="card">
-        <h2 th:text="${usuario.id} != null ? 'Editar usuario' : 'Registrar usuario'">Formulario</h2>
+<main class="contenido">
+    <div class="encabezado-seccion">
+        <div>
+            <h1 th:text="${usuario.id} != null ? 'Editar usuario' : 'Nuevo usuario'">Usuario</h1>
+            <p>Los campos marcados con * son obligatorios.</p>
+        </div>
+    </div>
 
-        <div th:if="${error}" class="alerta error" th:text="${error}"></div>
+    <div class="vidrio tarjeta tarjeta-angosta">
+        <div th:if="${error}" class="alerta error" role="alert" th:text="${error}"></div>
 
         <form th:action="${usuario.id} != null ? @{/usuarios/editar/{id}(id=${usuario.id})} : @{/usuarios}"
-              method="post" th:object="${usuario}" class="grid">
+              method="post" th:object="${usuario}">
+            <div class="rejilla-form">
+                <div class="campo completo">
+                    <label for="nombre">Nombre <span aria-hidden="true">*</span></label>
+                    <input type="text" th:field="*{nombre}" required maxlength="100"
+                           th:attr="aria-invalid=${#fields.hasErrors('nombre')} ? 'true' : null">
+                    <div class="error-campo" th:if="${#fields.hasErrors('nombre')}" th:errors="*{nombre}"></div>
+                </div>
 
-            <div>
-                <label>Nombre *</label>
-                <input type="text" th:field="*{nombre}" required maxlength="100">
-                <div class="field-error" th:if="${#fields.hasErrors('nombre')}" th:errors="*{nombre}"></div>
+                <div class="campo">
+                    <label for="username">Usuario <span aria-hidden="true">*</span></label>
+                    <input type="text" th:field="*{username}" required maxlength="100" autocomplete="off"
+                           th:attr="aria-invalid=${#fields.hasErrors('username')} ? 'true' : null">
+                    <div class="error-campo" th:if="${#fields.hasErrors('username')}" th:errors="*{username}"></div>
+                </div>
+
+                <div class="campo">
+                    <label for="password">Contraseña <span th:if="${usuario.id == null}" aria-hidden="true">*</span></label>
+                    <!-- Sin th:value a propósito: nunca se precarga el hash guardado en el campo. -->
+                    <input type="password" id="password" name="password" th:required="${usuario.id == null}"
+                           maxlength="255" autocomplete="new-password"
+                           th:attr="aria-invalid=${#fields.hasErrors('password')} ? 'true' : null">
+                    <p class="ayuda" th:if="${usuario.id != null}">Déjala vacía para mantener la contraseña actual.</p>
+                    <div class="error-campo" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></div>
+                </div>
+
+                <div class="campo completo">
+                    <label for="rolId">Rol <span aria-hidden="true">*</span></label>
+                    <select id="rolId" name="rolId" required>
+                        <option value="">Selecciona un rol</option>
+                        <option th:each="rol : ${roles}"
+                                th:value="${rol.id}"
+                                th:text="${rol.nombre}"
+                                th:selected="${usuario.rol != null and usuario.rol.id == rol.id}">
+                        </option>
+                        <option th:if="${rolInactivoActual != null}"
+                                th:value="${rolInactivoActual.id}"
+                                th:text="${rolInactivoActual.nombre} + ' (inactivo)'"
+                                selected>
+                        </option>
+                    </select>
+                </div>
             </div>
 
-            <div>
-                <label>Usuario *</label>
-                <input type="text" th:field="*{username}" required maxlength="100">
-                <div class="field-error" th:if="${#fields.hasErrors('username')}" th:errors="*{username}"></div>
-            </div>
-
-            <div>
-                <label th:text="${usuario.id} != null ? 'Contraseña' : 'Contraseña *'">Contraseña</label>
-                <!-- Sin th:value a propósito: nunca se precarga el hash guardado en el campo. -->
-                <input type="password" name="password" th:required="${usuario.id == null}"
-                       placeholder="••••••••" maxlength="255" autocomplete="new-password">
-                <p class="form-hint" th:if="${usuario.id != null}">Deja vacío para mantener la contraseña actual.</p>
-                <div class="field-error" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></div>
-            </div>
-
-            <div>
-                <label>Rol *</label>
-                <select name="rolId" required>
-                    <option value="">— Selecciona —</option>
-                    <option th:each="rol : ${roles}"
-                            th:value="${rol.id}"
-                            th:text="${rol.nombre}"
-                            th:selected="${usuario.rol != null and usuario.rol.id == rol.id}">
-                    </option>
-                    <option th:if="${rolInactivoActual != null}"
-                            th:value="${rolInactivoActual.id}"
-                            th:text="${rolInactivoActual.nombre} + ' (inactivo)'"
-                            selected>
-                    </option>
-                </select>
-            </div>
-
-            <div style="display:flex; gap:8px; align-items:center;">
-                <button type="submit" class="action">Guardar</button>
-                <a th:href="@{/usuarios}" class="action secondary">Cancelar</a>
+            <div class="pie-form">
+                <button type="submit" class="btn btn-principal">Guardar</button>
+                <a th:href="@{/usuarios}" class="btn btn-secundario">Cancelar</a>
             </div>
         </form>
     </div>

@@ -1,34 +1,39 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="${rol.id} != null ? 'Editar rol' : 'Nuevo rol'">Formulario de Rol</title>
+    <title th:text="(${rol.id} != null ? 'Editar rol' : 'Nuevo rol') + ' · Inventario hospitalario'">Rol · Inventario hospitalario</title>
     <th:block th:replace="~{fragments/layout :: estilos}"></th:block>
 </head>
 <body>
 
 <th:block th:replace="~{fragments/layout :: barra('roles')}"></th:block>
 
-<main>
-    <div class="card">
-        <h2 th:text="${rol.id} != null ? 'Editar rol' : 'Registrar rol'">Formulario</h2>
+<main class="contenido">
+    <div class="encabezado-seccion">
+        <div>
+            <h1 th:text="${rol.id} != null ? 'Editar rol' : 'Nuevo rol'">Rol</h1>
+            <p>Los campos marcados con * son obligatorios.</p>
+        </div>
+    </div>
 
-        <div th:if="${error}" class="alerta error" th:text="${error}"></div>
+    <div class="vidrio tarjeta tarjeta-angosta">
+        <div th:if="${error}" class="alerta error" role="alert" th:text="${error}"></div>
 
         <form th:action="${rol.id} != null ? @{/roles/editar/{id}(id=${rol.id})} : @{/roles}"
-              method="post" th:object="${rol}" class="grid">
-
-            <div>
-                <label>Nombre *</label>
-                <input type="text" th:field="*{nombre}" required maxlength="50">
-                <p class="form-hint">Se guarda en mayúsculas y sin tildes (ej. "Médico" se guarda como "MEDICO").</p>
-                <div class="field-error" th:if="${#fields.hasErrors('nombre')}" th:errors="*{nombre}"></div>
+              method="post" th:object="${rol}">
+            <div class="campo">
+                <label for="nombre">Nombre <span aria-hidden="true">*</span></label>
+                <input type="text" th:field="*{nombre}" required maxlength="50" autocomplete="off"
+                       th:attr="aria-invalid=${#fields.hasErrors('nombre')} ? 'true' : null">
+                <p class="ayuda">Se guarda en mayúsculas y sin tildes (por ejemplo, «Médico» se guarda como «MEDICO»).</p>
+                <div class="error-campo" th:if="${#fields.hasErrors('nombre')}" th:errors="*{nombre}"></div>
             </div>
 
-            <div style="display:flex; gap:8px; align-items:center;">
-                <button type="submit" class="action">Guardar</button>
-                <a th:href="@{/roles}" class="action secondary">Cancelar</a>
+            <div class="pie-form">
+                <button type="submit" class="btn btn-principal">Guardar</button>
+                <a th:href="@{/roles}" class="btn btn-secundario">Cancelar</a>
             </div>
         </form>
     </div>
