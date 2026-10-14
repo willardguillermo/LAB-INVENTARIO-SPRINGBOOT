@@ -1,34 +1,52 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="${rol.id} != null ? 'Editar rol' : 'Nuevo rol'">Formulario de Rol</title>
+    <title th:text="(${rol.id} != null ? 'Editar rol' : 'Nuevo rol') + ' · Inventario Hospitalario'">Formulario de Rol</title>
     <th:block th:replace="~{fragments/layout :: estilos}"></th:block>
 </head>
 <body>
 
 <th:block th:replace="~{fragments/layout :: barra('roles')}"></th:block>
 
-<main>
-    <div class="card">
-        <h2 th:text="${rol.id} != null ? 'Editar rol' : 'Registrar rol'">Formulario</h2>
+<main class="app-main">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Roles</h1>
+            <p class="page-description">Perfiles de acceso. Un rol inactivo impide iniciar sesión a sus usuarios.</p>
+        </div>
+    </div>
 
-        <div th:if="${error}" class="alerta error" th:text="${error}"></div>
+    <div class="card" th:classappend="${rol.id} != null ? 'is-editing'">
+        <div class="card-header">
+            <div>
+                <h2 class="card-title" th:text="${rol.id} != null ? 'Editando rol #' + ${rol.id} : 'Registrar rol'">Formulario</h2>
+                <p class="card-subtitle">Los campos marcados con <span class="req">*</span> son obligatorios.</p>
+            </div>
+            <span class="badge badge-info edit-chip">Modo edición</span>
+        </div>
 
         <form th:action="${rol.id} != null ? @{/roles/editar/{id}(id=${rol.id})} : @{/roles}"
-              method="post" th:object="${rol}" class="grid">
+              method="post" th:object="${rol}">
+            <div class="card-body">
+                <div th:if="${error}" class="alert alert-error" role="alert">
+                    <span data-icon="error"></span><span th:text="${error}"></span>
+                </div>
 
-            <div>
-                <label>Nombre *</label>
-                <input type="text" th:field="*{nombre}" required maxlength="50">
-                <p class="form-hint">Se guarda en mayúsculas y sin tildes (ej. "Médico" se guarda como "MEDICO").</p>
-                <div class="field-error" th:if="${#fields.hasErrors('nombre')}" th:errors="*{nombre}"></div>
+                <div class="form-grid cols-2">
+                    <div class="field">
+                        <label for="nombre">Nombre<span class="req">*</span></label>
+                        <input type="text" th:field="*{nombre}" required maxlength="50" placeholder="Ej. ENFERMERO"
+                               th:attr="aria-invalid=${#fields.hasErrors('nombre')} ? 'true' : null">
+                        <p class="field-hint">Se guarda en mayúsculas y sin tildes (ej. «Médico» se guarda como «MEDICO»).</p>
+                        <p class="field-error" th:if="${#fields.hasErrors('nombre')}"><span data-icon="error"></span><span th:errors="*{nombre}"></span></p>
+                    </div>
+                </div>
             </div>
-
-            <div style="display:flex; gap:8px; align-items:center;">
-                <button type="submit" class="action">Guardar</button>
-                <a th:href="@{/roles}" class="action secondary">Cancelar</a>
+            <div class="card-footer">
+                <a th:href="@{/roles}" class="btn btn-secondary" th:text="${rol.id} != null ? 'Cancelar edición' : 'Cancelar'">Cancelar</a>
+                <button type="submit" class="btn btn-primary" th:text="${rol.id} != null ? 'Guardar cambios' : 'Guardar rol'">Guardar</button>
             </div>
         </form>
     </div>

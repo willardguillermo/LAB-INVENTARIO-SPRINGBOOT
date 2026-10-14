@@ -1,41 +1,72 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Roles</title>
+    <title>Roles · Inventario Hospitalario</title>
     <th:block th:replace="~{fragments/layout :: estilos}"></th:block>
 </head>
 <body>
 
 <th:block th:replace="~{fragments/layout :: barra('roles')}"></th:block>
 
-<main>
+<main class="app-main">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Roles</h1>
+            <p class="page-description">Perfiles de acceso. Un rol inactivo impide iniciar sesión a sus usuarios.</p>
+        </div>
+        <a sec:authorize="hasRole('ADMINISTRADOR')" th:href="@{/roles/nuevo}" class="btn btn-primary">
+            <span data-icon="mas"></span>Nuevo rol
+        </a>
+    </div>
+
+    <div th:if="${error}" class="alert alert-error" role="alert">
+        <span data-icon="error"></span><span th:text="${error}"></span>
+    </div>
+
     <div class="card">
-        <h2>Roles</h2>
-
-        <div th:if="${error}" class="alerta error" th:text="${error}"></div>
-
-        <a sec:authorize="hasRole('ADMINISTRADOR')" th:href="@{/roles/nuevo}" class="action" style="margin-bottom:16px; display:inline-block;">Nuevo rol</a>
-
-        <div style="overflow-x:auto">
-            <table>
+        <div class="card-header">
+            <div>
+                <h2 class="card-title">Listado de roles</h2>
+                <p class="card-subtitle" th:text="${#lists.size(roles)} + (${#lists.size(roles)} == 1 ? ' rol registrado' : ' roles registrados')"></p>
+            </div>
+        </div>
+        <div class="table-wrap">
+            <table class="table">
                 <thead>
-                <tr><th>Nombre</th><th>Estado</th><th>Acciones</th></tr>
+                <tr><th>Nombre</th><th>Estado</th><th class="col-acciones">Acciones</th></tr>
                 </thead>
                 <tbody>
-                <tr th:if="${#lists.isEmpty(roles)}">
-                    <td colspan="3" style="text-align:center; color: var(--muted);">Sin roles registrados</td>
+                <tr th:if="${#lists.isEmpty(roles)}" class="state-row">
+                    <td colspan="3">
+                        <div class="state">
+                            <div class="state-icon"><span data-icon="vacio"></span></div>
+                            <div class="state-title">Aún no hay roles</div>
+                            <div class="state-text">Crea el primero con el botón «Nuevo rol».</div>
+                        </div>
+                    </td>
                 </tr>
-                <tr th:each="rol : ${roles}">
-                    <td th:text="${rol.nombre}"></td>
-                    <td><span class="badge" th:classappend="${rol.estado} ? 'on' : 'off'" th:text="${rol.estado} ? 'Activo' : 'Inactivo'"></span></td>
+                <tr th:each="rol : ${roles}" th:classappend="${rol.estado} ? '' : 'is-inactive'">
+                    <td class="col-min"><span class="cell-title" th:text="${rol.nombre}"></span></td>
                     <td>
-                        <div class="actions-cell">
-                            <a th:href="@{/roles/editar/{id}(id=${rol.id})}" class="action secondary">Editar</a>
-                            <form th:action="@{/roles/estado/{id}(id=${rol.id})}" method="post" style="display:inline">
-                                <button type="submit" class="action danger">Activar/Desactivar</button>
+                        <span class="badge badge-dot" th:classappend="${rol.estado} ? 'badge-success' : 'badge-neutral'"
+                              th:text="${rol.estado} ? 'Activo' : 'Inactivo'"></span>
+                    </td>
+                    <td class="col-acciones">
+                        <div class="row-actions">
+                            <a th:href="@{/roles/editar/{id}(id=${rol.id})}" class="btn btn-sm btn-outline" title="Editar" aria-label="Editar">
+                                <span data-icon="editar"></span><span class="btn-label">Editar</span>
+                            </a>
+                            <form th:action="@{/roles/estado/{id}(id=${rol.id})}" method="post"
+                                  th:attr="data-confirmar=${rol.estado} ? |Los usuarios con el rol «${rol.nombre}» no podrán iniciar sesión mientras esté inactivo.| : null"
+                                  data-confirmar-titulo="¿Desactivar rol?" data-confirmar-boton="Desactivar">
+                                <button type="submit" class="btn btn-sm btn-estado"
+                                        th:classappend="${rol.estado} ? 'btn-outline-danger' : 'btn-outline-success'"
+                                        th:title="${rol.estado} ? 'Desactivar' : 'Activar'" th:attr="aria-label=${rol.estado} ? 'Desactivar' : 'Activar'">
+                                    <span data-icon="power"></span><span class="btn-label" th:text="${rol.estado} ? 'Desactivar' : 'Activar'"></span>
+                                </button>
                             </form>
                         </div>
                     </td>

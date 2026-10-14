@@ -1,65 +1,89 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="${usuario.id} != null ? 'Editar usuario' : 'Nuevo usuario'">Formulario de Usuario</title>
+    <title th:text="(${usuario.id} != null ? 'Editar usuario' : 'Nuevo usuario') + ' · Inventario Hospitalario'">Formulario de Usuario</title>
     <th:block th:replace="~{fragments/layout :: estilos}"></th:block>
 </head>
 <body>
 
 <th:block th:replace="~{fragments/layout :: barra('usuarios')}"></th:block>
 
-<main>
-    <div class="card">
-        <h2 th:text="${usuario.id} != null ? 'Editar usuario' : 'Registrar usuario'">Formulario</h2>
+<main class="app-main">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Usuarios</h1>
+            <p class="page-description">Cuentas con acceso al sistema y el rol que determina sus permisos.</p>
+        </div>
+    </div>
 
-        <div th:if="${error}" class="alerta error" th:text="${error}"></div>
+    <div class="card" th:classappend="${usuario.id} != null ? 'is-editing'">
+        <div class="card-header">
+            <div>
+                <h2 class="card-title" th:text="${usuario.id} != null ? 'Editando usuario #' + ${usuario.id} : 'Registrar usuario'">Formulario</h2>
+                <p class="card-subtitle">Los campos marcados con <span class="req">*</span> son obligatorios.</p>
+            </div>
+            <span class="badge badge-info edit-chip">Modo edición</span>
+        </div>
 
         <form th:action="${usuario.id} != null ? @{/usuarios/editar/{id}(id=${usuario.id})} : @{/usuarios}"
-              method="post" th:object="${usuario}" class="grid">
+              method="post" th:object="${usuario}">
+            <div class="card-body">
+                <div th:if="${error}" class="alert alert-error" role="alert">
+                    <span data-icon="error"></span><span th:text="${error}"></span>
+                </div>
+                <div th:if="${#fields.hasGlobalErrors()}" class="alert alert-error" role="alert">
+                    <span data-icon="error"></span>
+                    <span><th:block th:each="e, it : ${#fields.globalErrors()}" th:text="${e} + (${it.last} ? '' : ' · ')"></th:block></span>
+                </div>
 
-            <div>
-                <label>Nombre *</label>
-                <input type="text" th:field="*{nombre}" required maxlength="100">
-                <div class="field-error" th:if="${#fields.hasErrors('nombre')}" th:errors="*{nombre}"></div>
+                <div class="form-grid cols-2">
+                    <div class="field">
+                        <label for="nombre">Nombre completo<span class="req">*</span></label>
+                        <input type="text" th:field="*{nombre}" required maxlength="100"
+                               th:attr="aria-invalid=${#fields.hasErrors('nombre')} ? 'true' : null">
+                        <p class="field-error" th:if="${#fields.hasErrors('nombre')}"><span data-icon="error"></span><span th:errors="*{nombre}"></span></p>
+                    </div>
+
+                    <div class="field">
+                        <label for="username">Usuario<span class="req">*</span></label>
+                        <input type="text" th:field="*{username}" required maxlength="100" autocomplete="off"
+                               th:attr="aria-invalid=${#fields.hasErrors('username')} ? 'true' : null">
+                        <p class="field-error" th:if="${#fields.hasErrors('username')}"><span data-icon="error"></span><span th:errors="*{username}"></span></p>
+                    </div>
+
+                    <div class="field">
+                        <label for="password">Contraseña<span class="req" th:if="${usuario.id == null}">*</span></label>
+                        <!-- Sin th:value a propósito: nunca se precarga el hash guardado en el campo. -->
+                        <input type="password" id="password" name="password" th:required="${usuario.id == null}"
+                               placeholder="••••••••" maxlength="255" autocomplete="new-password"
+                               th:attr="aria-invalid=${#fields.hasErrors('password')} ? 'true' : null">
+                        <p class="field-hint" th:if="${usuario.id != null}">Déjala vacía para mantener la contraseña actual.</p>
+                        <p class="field-error" th:if="${#fields.hasErrors('password')}"><span data-icon="error"></span><span th:errors="*{password}"></span></p>
+                    </div>
+
+                    <div class="field">
+                        <label for="rolId">Rol<span class="req">*</span></label>
+                        <select id="rolId" name="rolId" required>
+                            <option value="">— Selecciona —</option>
+                            <option th:each="rol : ${roles}"
+                                    th:value="${rol.id}"
+                                    th:text="${rol.nombre}"
+                                    th:selected="${usuario.rol != null and usuario.rol.id == rol.id}">
+                            </option>
+                            <option th:if="${rolInactivoActual != null}"
+                                    th:value="${rolInactivoActual.id}"
+                                    th:text="${rolInactivoActual.nombre} + ' (inactivo)'"
+                                    selected>
+                            </option>
+                        </select>
+                    </div>
+                </div>
             </div>
-
-            <div>
-                <label>Usuario *</label>
-                <input type="text" th:field="*{username}" required maxlength="100">
-                <div class="field-error" th:if="${#fields.hasErrors('username')}" th:errors="*{username}"></div>
-            </div>
-
-            <div>
-                <label th:text="${usuario.id} != null ? 'Contraseña' : 'Contraseña *'">Contraseña</label>
-                <!-- Sin th:value a propósito: nunca se precarga el hash guardado en el campo. -->
-                <input type="password" name="password" th:required="${usuario.id == null}"
-                       placeholder="••••••••" maxlength="255" autocomplete="new-password">
-                <p class="form-hint" th:if="${usuario.id != null}">Deja vacío para mantener la contraseña actual.</p>
-                <div class="field-error" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></div>
-            </div>
-
-            <div>
-                <label>Rol *</label>
-                <select name="rolId" required>
-                    <option value="">— Selecciona —</option>
-                    <option th:each="rol : ${roles}"
-                            th:value="${rol.id}"
-                            th:text="${rol.nombre}"
-                            th:selected="${usuario.rol != null and usuario.rol.id == rol.id}">
-                    </option>
-                    <option th:if="${rolInactivoActual != null}"
-                            th:value="${rolInactivoActual.id}"
-                            th:text="${rolInactivoActual.nombre} + ' (inactivo)'"
-                            selected>
-                    </option>
-                </select>
-            </div>
-
-            <div style="display:flex; gap:8px; align-items:center;">
-                <button type="submit" class="action">Guardar</button>
-                <a th:href="@{/usuarios}" class="action secondary">Cancelar</a>
+            <div class="card-footer">
+                <a th:href="@{/usuarios}" class="btn btn-secondary" th:text="${usuario.id} != null ? 'Cancelar edición' : 'Cancelar'">Cancelar</a>
+                <button type="submit" class="btn btn-primary" th:text="${usuario.id} != null ? 'Guardar cambios' : 'Guardar usuario'">Guardar</button>
             </div>
         </form>
     </div>
