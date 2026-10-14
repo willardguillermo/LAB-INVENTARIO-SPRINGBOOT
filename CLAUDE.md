@@ -102,9 +102,6 @@ public Proveedor desactivar(Long id) { ... }
 
 ### Generales
 
-- XSS en `index.html`: las secciones de Categorías y Proveedores construyen el `onclick` con
-  `JSON.stringify(...)` dentro del atributo HTML; un nombre con `&quot;` permite inyectar JavaScript.
-  En Productos ya se corrigió (botones con `data-id` y los datos en un `Map`).
 - `Categoria` y `UnidadMedida` no tienen `@NotBlank` y sus controladores no usan `@Valid`.
 - Inconsistencias: paquetes `model`/`models`/`entity`/`impl` mezclados, tres estilos de Lombok y
   tres convenciones de estado (`Boolean estado`, `Boolean activo`, `String "ACTIVO"`).
