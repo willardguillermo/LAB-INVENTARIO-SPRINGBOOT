@@ -236,6 +236,20 @@ de Spring Security) queda como `sistema`. Solo ADMINISTRADOR puede consultar `/a
   fecha y hora, operación, entidad e id. Solo se auditan las operaciones que se confirmaron en la
   base de datos; un intento fallido no deja registro.
 
+## Modelo de base de datos
+
+![Diagrama de la base de datos](docs/diagrama-bd.png)
+
+- **`productos`**: tabla central. Cada producto pertenece a una `categoria` (`categoria_id`) y a una
+  `unidad_medida` (`unidad_medida_id`), ambas obligatorias, y opcionalmente a un `proveedor` (`proveedor_id`).
+- **`categoria`**: una categoría agrupa muchos productos (1:N con `productos`).
+- **`unidad_medida`**: una unidad de medida se usa en muchos productos (1:N con `productos`).
+- **`proveedor`**: un proveedor abastece muchos productos (1:N con `productos`, relación opcional).
+- **`usuario`**: cada usuario tiene un único rol (`rol_id`).
+- **`rol`**: un rol se asigna a muchos usuarios (1:N con `usuario`).
+- **`auditoria`**: bitácora sin claves foráneas; guarda la entidad y el `registro_id` afectados y el
+  `usuario` como texto, para que el historial se conserve aunque cambien los registros.
+
 ## Datos de demostración
 
 `src/main/resources/datos-demo.sql` carga 5 categorías, 5 unidades de medida, 3 proveedores
